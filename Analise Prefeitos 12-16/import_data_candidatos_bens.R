@@ -19,7 +19,7 @@ colnames(declaracao_2016) <- colunas_declaracao
 
 # Dados de candidatos para 2012 e 2016
 
-candidatos_2012 <- read_delim("consulta_cand_2012_PB.txt", delim = ";", col_names = FALSE,
+candidatos_2012 <- read_delim("data/consulta_cand_2012_PB.txt", delim = ";", col_names = FALSE,
                               locale = locale(encoding = "latin1"),
                               col_types = "cciccccciccccccicicccccciccccicicicicccccicc")
 
