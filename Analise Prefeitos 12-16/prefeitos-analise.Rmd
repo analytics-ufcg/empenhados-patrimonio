@@ -1,0 +1,169 @@
+---
+title: "Prefeitos e bens declarados"
+output: 
+  html_document:
+    fig_height: 7
+    theme: paper
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+library(dplyr)
+library(plotly)
+library(tidyr)
+options(scipen = 999)
+```
+
+```{r}
+source("ranking_prefeitos.R")
+```
+
+```{r}
+top_prefeitos_reeleitos <- prefeitos_reeleitos %>% 
+  select(cpfCandidato, nomeCandidato, `2012` = totalBens2012, `2016` = totalBens2016, ganho, nomeUrnaCandidato, descUnidEleitoral) %>% 
+  tidyr::gather("ano", "totalBens", 3:4) %>% 
+  arrange(desc(ganho))
+```
+# Top 10 prefeitos mais ricos em 2012
+```{r}
+plot_ly(data = head(prefeitos_bens2012, 10), orientation = 'h') %>%
+  
+  add_bars(y = ~reorder(nomeUrnaCandidato, totalBens2012), x = ~totalBens2012,
+           text = ~paste("CPF:", cpfCandidato, "<br>",
+                         "Nome:", nomeCandidato, "<br>",
+                         "Município:", descUnidEleitoral, "<br>",
+                         "Declaração em 2012:", totalBens2012),
+          hoverinfo = "text") %>%
+  
+  layout(xaxis = list(title = 'Total de bens em 2012'),
+         yaxis = list(title = '', fixedrange = TRUE), 
+         margin = list(l = 150))
+```
+
+### Todos os prefeitos eleitos em 2012
+```{r}
+prefeitos_bens2012 %>% 
+  plot_ly() %>%
+  add_trace(y = ~totalBens2012, type = "box", jitter = 0.1, name = " ") %>%
+  layout(title = "", hovermode = "x",
+         yaxis = list(title = "Total de bens declarados"),
+         xaxis = list(title = "Prefeitos"))
+```
+
+# Top 10 prefeitos mais ricos em 2016
+```{r}
+plot_ly(data = head(prefeitos_bens2016, 10), orientation = 'h') %>%
+  
+  add_bars(y = ~reorder(nomeUrnaCandidato, totalBens2016), x = ~totalBens2016,
+           text = ~paste("CPF:", cpfCandidato, "<br>",
+                         "Nome:", nomeCandidato, "<br>",
+                         "Município:", descUnidEleitoral, "<br>",
+                         "Declaração em 2016:", totalBens2016),
+          hoverinfo = "text") %>%
+  
+  layout(xaxis = list(title = 'Total de bens em 2016'),
+         yaxis = list(title = '', fixedrange = TRUE), 
+         margin = list(l = 150))
+```
+
+### Todos os prefeitos eleitos em 2016
+```{r}
+prefeitos_bens2016 %>% 
+  plot_ly() %>%
+  add_trace(y = ~totalBens2016, type = "box", jitter = 0.1, name = " ") %>%
+  layout(title = "", hovermode = "x",
+         yaxis = list(title = "Total de bens declarados"),
+         xaxis = list(title = "Prefeitos"))
+```
+
+# Prefeitos eleitos em 2012 e reeleitos em 2016
+## Patrimônio dos prefeitos eleitos em 2012 e 2016 (top10)
+```{r}
+top_prefeitos_reeleitos %>% 
+  head(20) %>% 
+  plot_ly() %>%
+    add_trace(x = ~as.factor(ano), y = ~totalBens, color = ~nomeUrnaCandidato,
+              type = "scatter", mode = "lines+markers",
+              text = ~paste(
+              "Prefeito:", nomeCandidato, "<br>",
+              "Total de bens: R$ ", totalBens, "<br>",
+              "Município:", descUnidEleitoral
+              ),
+            hoverinfo = "text") %>%
+    layout(xaxis = list(title = ""),
+                    legend = list(orientation = "h"),
+           yaxis = list(title = "Valor declarado (R$)"))
+```
+
+## Diferença absoluta entre o patrimônio de 2016 e 2012 (top10)
+
+A diferença em reais entre o total declarado em 2016 e o total declarado em 2012.
+```{r}
+plot_ly(data = head(prefeitos_reeleitos, 10), orientation = 'h') %>%
+  
+  add_bars(y = ~reorder(nomeUrnaCandidato, ganho), x = ~ganho,
+           text = ~paste("CPF:", cpfCandidato, "<br>",
+                         "Nome:", nomeCandidato, "<br>",
+                         "Município:", descUnidEleitoral, "<br>",
+                         "Declaração em 2012:", totalBens2012, "<br>",
+                         "Declaração em 2016:", totalBens2016),
+          hoverinfo = "text") %>%
+  
+  layout(xaxis = list(title = 'Diferença entre o declarado em 2016 e 2012'),
+         yaxis = list(title = '', fixedrange = TRUE), 
+         margin = list(l = 150))
+```
+
+### Diferença absoluta para todos os prefeitos reeleitos
+
+Existem casos de prefeitos que tiveram seu patrimônio reduzido.
+```{r}
+prefeitos_reeleitos %>% 
+  plot_ly() %>%
+  add_trace(y = ~ganho, type = "box", jitter = 0.1, name = " ") %>%
+  layout(title = "", hovermode = "x",
+         yaxis = list(title = "Diferença absoluta entre 2016 e 2012"),
+         xaxis = list(title = "Prefeitos"))
+```
+
+## Diferença relativa entre o patrimônio de 2016 e 2012 (top10)
+
+A razão entre o total declarado em 2016 e o total declarado em 2012. Ou seja, quantas vezes o patrimônio aumentou em 2016 com relação a 2012.
+```{r}
+prefeitos_reeleitos %>%
+  mutate(ganhoRelativo = totalBens2016/totalBens2012) %>%
+  arrange(desc(ganhoRelativo)) %>%
+  head(10) %>%
+  plot_ly(orientation = 'h') %>%
+  add_bars(y = ~reorder(nomeUrnaCandidato, ganhoRelativo), x = ~ganhoRelativo,
+           text = ~paste("CPF:", cpfCandidato, "<br>",
+                         "Nome:", nomeCandidato, "<br>",
+                         "Município:", descUnidEleitoral, "<br>",
+                         "Declaração em 2012:", totalBens2012, "<br>",
+                         "Declaração em 2016:", totalBens2016),
+          hoverinfo = "text") %>%
+  layout(xaxis = list(title = 'Razão entre o declarado em 2016 e 2012'),
+         yaxis = list(title = '', fixedrange = TRUE),
+         margin = list(l = 150))
+```
+
+### Diferença relativa para todos os prefeitos reeleitos
+```{r}
+prefeitos_reeleitos %>% 
+  mutate(ganhoRelativo = totalBens2016/totalBens2012) %>%
+  arrange(desc(ganhoRelativo)) %>%
+  plot_ly() %>%
+  add_trace(y = ~ganhoRelativo, type = "box", jitter = 0.1, name = " ") %>%
+  layout(title = "", hovermode = "x",
+         yaxis = list(title = "Diferença relativa entre 2016 e 2012"),
+         xaxis = list(title = "Prefeitos"))
+```
+
