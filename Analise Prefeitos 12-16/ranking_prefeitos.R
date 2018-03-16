@@ -1,10 +1,10 @@
 library(dplyr)
-source("import_data_candidatos_bens.R")
+source("../import_data_candidatos_bens.R")
 
-declaracao_2012 <- importDecalaracao2012()
-candidatos_2012 <- importCandidatos2012()
-declaracao_2016 <- importDecalaracao2016()
-candidatos_2016 <- importCandidatos2016()
+declaracao_2012 <- importDecalaracao2012("../data/bem_candidato_2012_PB.txt")
+candidatos_2012 <- importCandidatos2012("../data/consulta_cand_2012_PB.txt")
+declaracao_2016 <- importDecalaracao2016("../data/bem_candidato_2016_PB.txt")
+candidatos_2016 <- importCandidatos2016("../data/consulta_cand_2016_PB.txt")
   
 # Prefeitos eleitos em 2012
 prefeitos2012 <- candidatos_2012 %>% 

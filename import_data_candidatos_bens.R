@@ -1,8 +1,8 @@
 library(readr)
 library(dplyr)
 
-importDecalaracao2012 <- function(){
-  declaracao_2012 <- read_delim("data/bem_candidato_2012_PB.txt", delim = ";", col_names = FALSE, col_types = "cciccciccncc",
+importDecalaracao2012 <- function(dataPath){
+  declaracao_2012 <- read_delim(dataPath, delim = ";", col_names = FALSE, col_types = "cciccciccncc",
                                 locale = locale(encoding = "latin1"))
   
   colunas_declaracao <- c("dataGeracao", "horaGeracao", "anoEleicao", "descEleicao", "siglaUF", "sequencialCandidato", "codTipoBem", "descricaoTipoBem", 
@@ -13,11 +13,11 @@ importDecalaracao2012 <- function(){
   return(declaracao_2012)
 }
 
-importDecalaracao2016 <- function(){
+importDecalaracao2016 <- function(dataPath){
   colunas_declaracao <- c("dataGeracao", "horaGeracao", "anoEleicao", "descEleicao", "siglaUF", "sequencialCandidato", "codTipoBem", "descricaoTipoBem", 
                           "detalheBem", "valorBem", "dataUltimaAtualizacao", "horaUltimaAtualizacao")
 
-  declaracao_2016 <- read_delim("data/bem_candidato_2016_PB.txt", delim = ";", col_names = FALSE, col_types = "cciccciccncc",
+  declaracao_2016 <- read_delim(dataPath, delim = ";", col_names = FALSE, col_types = "cciccciccncc",
                                 locale = locale(encoding = "latin1"))
   
   colnames(declaracao_2016) <- colunas_declaracao
@@ -26,8 +26,8 @@ importDecalaracao2016 <- function(){
   
 }
 
-importCandidatos2012 <- function(){
-  candidatos_2012 <- read_delim("data/consulta_cand_2012_PB.txt", delim = ";", col_names = FALSE,
+importCandidatos2012 <- function(dataPath){
+  candidatos_2012 <- read_delim(dataPath, delim = ";", col_names = FALSE,
                                 locale = locale(encoding = "latin1"),
                                 col_types = "cciccccciccccccicicccccciccccicicicicccccicc")
   
@@ -43,9 +43,9 @@ importCandidatos2012 <- function(){
   return(candidatos_2012)
 }
 
-importCandidatos2016 <- function(){
+importCandidatos2016 <- function(dataPath){
   
-  candidatos_2016 <- read_delim("data/consulta_cand_2016_PB.txt", delim = ";", col_names = FALSE,
+  candidatos_2016 <- read_delim(dataPath, delim = ";", col_names = FALSE,
                                 locale = locale(encoding = "latin1"),
                                 col_types = "cciccccciccccccicicccccciccccicicicicicccccicc")
   
