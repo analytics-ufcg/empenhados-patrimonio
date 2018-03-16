@@ -1,9 +1,11 @@
 library(dplyr)
 source("import_data_candidatos_bens.R")
 
-codigo_situacaoEleito <- candidatos_2012 %>% group_by(codSituacaoEleito, descSituacaoEleito) %>% summarise(n = n())
-codigo_cargo <- candidatos_2012 %>% group_by(codCargo, descCargo) %>% summarise(n = n())
-
+declaracao_2012 <- importDecalaracao2012()
+candidatos_2012 <- importCandidatos2012()
+declaracao_2016 <- importDecalaracao2016()
+candidatos_2016 <- importCandidatos2016()
+  
 # Prefeitos eleitos em 2012
 prefeitos2012 <- candidatos_2012 %>% 
   filter(codCargo == 11, codSituacaoEleito %in% c(1, 2, 3)) %>% 
