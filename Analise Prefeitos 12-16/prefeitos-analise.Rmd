@@ -32,6 +32,7 @@ top_prefeitos_reeleitos <- prefeitos_reeleitos %>%
   tidyr::gather("ano", "totalBens", 3:4) %>% 
   arrange(desc(ganho))
 ```
+
 # Top 10 prefeitos mais ricos em 2012
 ```{r}
 plot_ly(data = head(prefeitos_bens2012, 10), orientation = 'h') %>%
@@ -166,4 +167,49 @@ prefeitos_reeleitos %>%
          yaxis = list(title = "Diferença relativa entre 2016 e 2012"),
          xaxis = list(title = "Prefeitos"))
 ```
+
+
+## Bens acumulados do prefeito x IDH do município em questão
+
+```{r}
+utils <- src_mysql("utils",
+                   group = "ministerio-publico",
+                   username = "empenhados",
+                   password = NULL)
+
+municipios <- tbl(utils, "municipio") %>%
+  collect() %>%
+  select(cd_IBGE, cd_Municipio, de_Municipio, vl_Populacao, vl_IDHM) %>%
+   mutate(de_Municipio = toupper(de_Municipio)) %>%
+    rowwise()
+
+colnames(prefeitos_bens2016)[3] <- "de_Municipio"
+municipios[181, 3] = "SÃO DOMINGOS DE POMBAL"
+  
+idhmuni_bens <- inner_join(municipios, prefeitos_bens2016, by = "de_Municipio")
+
+
+
+x_axis <- list(
+  title = "IDH Município")
+y_axis <- list(
+  title = "Bens Acumulados (R$)")
+
+plot_ly(
+  idhmuni_bens, x = ~vl_IDHM, y = ~totalBens2016,
+  # Hover text:
+  text = ~paste('Municipio:', de_Municipio,
+                '<br>Prefeito:', nomeUrnaCandidato, 
+                "<br>IDH: ", vl_IDHM, 
+                '<br>Total Bens:', totalBens2016),
+  color = ~-vl_IDHM) %>%
+  layout(xaxis = x_axis, yaxis = y_axis)
+
+```
+
+
+
+
+
+
 
