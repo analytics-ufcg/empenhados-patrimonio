@@ -8,7 +8,7 @@ candidatos_2016 <- importCandidatos2016("../data/consulta_cand_2016_PB.txt")
 
 prefeitos_atuais <- candidatos_2016 %>% 
   filter(codCargo == 11, codSituacaoEleito %in% c(1, 2, 3)) %>% 
-  select(sequencialCandidato2016 = sequencialCandidato, siglaUnidEleitoral, descUnidEleitoral, nomeCandidato, nomeUrnaCandidato, 
+  select(sequencialCandidato2016 = sequencialCandidato, siglaUnidEleitoral, descUnidEleitoral, nomeCandidato, nomeUrnaCandidato, siglaPartido, 
          codCargo, descCargo, cpfCandidato, descSituacaoEleito)
 
 historico_prefeitos_atuais <- prefeitos_atuais %>% 

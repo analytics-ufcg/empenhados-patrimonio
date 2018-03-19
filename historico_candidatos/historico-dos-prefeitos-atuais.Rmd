@@ -29,7 +29,8 @@ source("load_historico.R")
 ```{r}
 top_prefeitos_ganho <- historico_bens_prefeitos_atuais %>% 
   mutate(ganho = totalBens2016 - totalBens2012) %>% 
-  select(cpfCandidato, nomeCandidato, `2012` = totalBens2012, `2016` = totalBens2016, ganho, nomeUrnaCandidato, descUnidEleitoral) %>% 
+  select(cpfCandidato, nomeCandidato, `2012` = totalBens2012, `2016` = totalBens2016, ganho, 
+         nomeUrnaCandidato, siglaPartido, descUnidEleitoral) %>% 
   tidyr::gather("ano", "totalBens", 3:4) %>%
   arrange(desc(ganho))
 ```
@@ -54,8 +55,6 @@ top_prefeitos_situacao <- historico_bens_prefeitos_atuais %>%
 top_prefeitos <- top_prefeitos_ganho %>% 
   left_join(top_prefeitos_cargo) %>% 
   left_join(top_prefeitos_situacao)
-
-rm(top_prefeitos_ganho, top_prefeitos_cargo, top_prefeitos_situacao)
 ```
 
 ## Top 10 prefeitos que mais aumentaram seu patrimônio
@@ -69,7 +68,7 @@ top_prefeitos %>%
               "Prefeito:", nomeCandidato, "<br>",
               "Nome de urna:", nomeUrnaCandidato, "<br>",
               "Total de bens: R$ ", totalBens, "<br>",
-              "Ganho (2016 - 2012): ", ganho, "<br>",
+              "Diferença (2016 - 2012): ", ganho, "<br>",
               "Cargo: ", cargo, "<br>",
               "Situação: ", situacaoEleito, "<br>",
               "Município:", descUnidEleitoral
@@ -78,6 +77,55 @@ top_prefeitos %>%
     layout(xaxis = list(title = ""),
                     legend = list(orientation = "h"),
            yaxis = list(title = "Valor declarado (R$)"))
+```
+
+## Top10 prefeitos com maiores ganhos relativos
+
+```{r}
+top_prefeitos_relativo <- historico_bens_prefeitos_atuais %>% 
+  mutate(ganho = totalBens2016 - totalBens2012) %>% 
+  mutate(totalBens2016 = 100*((totalBens2016 - totalBens2012)/totalBens2012)) %>% 
+  mutate(totalBens2012 = 0) %>% 
+  select(cpfCandidato, nomeCandidato, `2012` = totalBens2012, `2016` = totalBens2016, ganho, 
+         nomeUrnaCandidato, descUnidEleitoral, siglaPartido) %>% 
+  tidyr::gather("ano", "ganhoRelativo", 3:4) %>%
+  arrange(desc(ganhoRelativo))
+```
+
+```{r}
+top_prefeitos_relativo_completo <- top_prefeitos_relativo %>% 
+  left_join(top_prefeitos_cargo) %>% 
+  left_join(top_prefeitos_situacao) %>% 
+  left_join(historico_bens_prefeitos_atuais %>% select(cpfCandidato, totalBens2012, totalBens2016))
+```
+
+```{r}
+top_n_prefeitos_relativo <- (top_prefeitos_relativo_completo %>% 
+  head(10) %>% 
+  select(cpfCandidato))$cpfCandidato
+```
+
+```{r}
+top_prefeitos_relativo_completo %>% 
+  filter(cpfCandidato %in% top_n_prefeitos_relativo) %>%
+  mutate(nomeUrnaCandidatoPartido = paste(nomeUrnaCandidato, "(", siglaPartido,")")) %>% 
+  plot_ly() %>%
+    add_trace(x = ~as.factor(ano), y = ~ganhoRelativo, color = ~nomeUrnaCandidatoPartido,
+              type = "scatter", mode = "lines+markers",
+              text = ~paste(
+              "Prefeito:", nomeCandidato, "<br>",
+              "Nome de urna:", nomeUrnaCandidato, "<br>",
+              "Total de bens (2012): R$ ", totalBens2012, "<br>",
+              "Total de bens (2016): R$ ", totalBens2016, "<br>",
+              "Ganho relativo (%): ", round(ganhoRelativo, 2), "<br>",
+              "Cargo: ", cargo, "<br>",
+              "Situação: ", situacaoEleito, "<br>",
+              "Município:", descUnidEleitoral
+              ),
+            hoverinfo = "text") %>%
+    layout(xaxis = list(title = ""),
+                    legend = list(orientation = "h"),
+           yaxis = list(title = "Ganho relativo (%)"))
 ```
 
 
