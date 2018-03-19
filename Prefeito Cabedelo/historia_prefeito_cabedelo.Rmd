@@ -1,0 +1,75 @@
+---
+title: "Prefeito de Cabedelo"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+library(dplyr)
+library(plotly)
+source("../import_data_candidatos_bens.R")
+```
+
+
+```{r}
+declaracao_2008 <- importDecalaracao2008("../data/bem_candidato_2008_PB.txt")
+candidatos_2008 <- importCandidatos2008("../data/consulta_cand_2008_PB.txt")
+declaracao_2012 <- importDecalaracao2012("../data/bem_candidato_2012_PB.txt")
+candidatos_2012 <- importCandidatos2012("../data/consulta_cand_2012_PB.txt")
+declaracao_2016 <- importDecalaracao2016("../data/bem_candidato_2016_PB.txt")
+candidatos_2016 <- importCandidatos2016("../data/consulta_cand_2016_PB.txt")
+
+
+cols <- c("sequencialCandidato", "siglaUnidEleitoral", "descUnidEleitoral", "siglaUF", "nomeCandidato", "nomeUrnaCandidato", "cpfCandidato", "siglaPartido", "descSituacaoEleito")
+
+declaracao_leto_2008 <- declaracao_2008 %>%
+  filter(sequencialCandidato == 9280)
+
+leto_2008 <- candidatos_2008 %>%
+  filter(sequencialCandidato == 9280)
+
+declaracao_leto_2012  <- declaracao_2012 %>%
+  filter(sequencialCandidato == 150000005081)
+
+leto_2012 <- candidatos_2012 %>%
+  filter(sequencialCandidato == 150000005081) %>%
+  select(cols)
+
+declaracao_leto_2016 <- declaracao_2016 %>%
+  filter(sequencialCandidato == 150000001347)
+
+leto_2016 <- candidatos_2016 %>%
+  filter(sequencialCandidato == 150000001347) %>%
+  select(cols)
+
+bens_2008 <- declaracao_leto_2008 %>%
+  group_by(sequencialCandidato) %>%
+  summarise(total = sum(valorBem)) %>%
+  mutate(ano = 2008)
+  
+bens_2012 <- declaracao_leto_2012 %>%
+  group_by(sequencialCandidato) %>%
+  summarise(total = sum(valorBem)) %>%
+  mutate(ano = 2012)
+
+bens_2016 <- declaracao_leto_2016 %>%
+  group_by(sequencialCandidato) %>%
+  summarise(total = sum(valorBem)) %>%
+  mutate(ano = 2016)
+
+bens_leto <- bens_2008 %>% rbind(bens_2012) %>% rbind(bens_2016)
+```
+
+```{r}
+plot_ly(data = bens_leto) %>%
+  add_lines(y = ~total, x = ~ano,
+            text = ~paste("Total de bens declarados: ", total, "<br>",
+                          "Ano: ", ano),
+            hoverinfo = "text") %>%
+    layout(xaxis = list(title = 'Ano'),
+         yaxis = list(title = 'Total de bens', fixedrange = TRUE))
+```
+
+
+## 
