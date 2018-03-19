@@ -71,5 +71,22 @@ plot_ly(data = bens_leto) %>%
          yaxis = list(title = 'Total de bens', fixedrange = TRUE))
 ```
 
+## Bens declarados em 2016
 
-## 
+```{r}
+declaracao_leto_2016 %>% 
+  mutate(detalheBemResume = paste(substr(detalheBem, 0, 45), "...")) %>% 
+  plot_ly() %>%
+      add_trace(x = ~descricaoTipoBem, y = ~valorBem, color = ~descricaoTipoBem,
+                type = "scatter", mode = "markers",
+                text = ~paste(
+                  "Descrição:", detalheBemResume, "<br>",
+                  "Valor:", valorBem, "<br>"
+                  ),
+                hoverinfo = "text") %>%
+      layout(xaxis = list(title = "LETO",  showticklabels = FALSE),
+             yaxis = list(title = "Valor (R$)"),
+             legend = list(orientation = "h")
+)
+```
+
