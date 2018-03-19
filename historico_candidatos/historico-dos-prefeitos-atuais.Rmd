@@ -36,7 +36,7 @@ top_prefeitos_ganho <- historico_bens_prefeitos_atuais %>%
 ```
 
 ```{r}
-top_prefeitos_cargo <- historico_bens_prefeitos_atuais %>% 
+prefeitos_cargo <- historico_bens_prefeitos_atuais %>% 
   select(cpfCandidato, `2012` = descCargo2012, `2016` = descCargo) %>% 
   mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>% 
   mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>% 
@@ -44,7 +44,7 @@ top_prefeitos_cargo <- historico_bens_prefeitos_atuais %>%
 ```
 
 ```{r}
-top_prefeitos_situacao <- historico_bens_prefeitos_atuais %>% 
+prefeitos_situacao <- historico_bens_prefeitos_atuais %>% 
   select(cpfCandidato, `2012` = descSituacaoEleito2012, `2016` = descSituacaoEleito) %>% 
   mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>% 
   mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>% 
@@ -52,14 +52,14 @@ top_prefeitos_situacao <- historico_bens_prefeitos_atuais %>%
 ```
 
 ```{r}
-top_prefeitos <- top_prefeitos_ganho %>% 
-  left_join(top_prefeitos_cargo) %>% 
-  left_join(top_prefeitos_situacao)
+historico_prefeitos_aumento <- top_prefeitos_ganho %>% 
+  left_join(prefeitos_cargo) %>% 
+  left_join(prefeitos_situacao)
 ```
 
 ## Top 10 prefeitos que mais aumentaram seu patrimônio
 ```{r}
-top_prefeitos %>% 
+historico_prefeitos_aumento %>% 
   head(20) %>% 
   plot_ly() %>%
     add_trace(x = ~as.factor(ano), y = ~totalBens, color = ~nomeUrnaCandidato,
@@ -127,5 +127,11 @@ top_prefeitos_relativo_completo %>%
                     legend = list(orientation = "h"),
            yaxis = list(title = "Ganho relativo (%)"))
 ```
+
+```{r}
+source("plot_helper.R")
+plot_ganho(historico_bens_prefeitos_atuais, prefeitos_cargo, prefeitos_situacao, tipoGanho = "absoluto")
+```
+
 
 
