@@ -1,5 +1,5 @@
 ---
-title: "Histórico dos prefeitos atuais"
+title: "Histórico dos prefeitos eleitos em 2016"
 output: 
   html_document:
     fig_height: 7
@@ -18,6 +18,9 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```{r}
 library(dplyr)
 library(plotly)
+library(rgdal)
+library(leaflet)
+library(stringr)
 options(scipen = 999)
 ```
 
@@ -25,7 +28,6 @@ options(scipen = 999)
 source("load_historico.R")
 ```
 
-# Aumento do patrimônio dos atuais prefeitos de 2012 para 2016
 ```{r}
 prefeitos_ganho_wide <- historico_bens_prefeitos_atuais %>% 
   mutate(ganho = totalBens2016 - totalBens2012) %>% 
@@ -56,6 +58,7 @@ historico_prefeitos_aumento <- prefeitos_ganho_wide %>%
   left_join(prefeitos_cargo) %>% 
   left_join(prefeitos_situacao)
 ```
+Considerando os prefeitos eleitos em 2016 e que foram candidatos a qualquer cargo (prefeito, vice ou vereador) em 2012.
 
 ## Top 10 prefeitos que mais aumentaram seu patrimônio
 ```{r}
@@ -85,7 +88,7 @@ Para essa visualização 2012 é considerado o ano base. Portanto a linha que de
 
 Cálculo do ganho relativo: 100 * ((totalBens2016 - totalBens2012) / totalBens2012)
 
-O valor em 2012 é 0 para todos os prefeitos pelo motivo de 2012 ser o ano base para a comparação e por esse motivo não apresentar ganho relativo quando comparado a si mesmo.
+O valor em 2012 é 0 para todos os prefeitos pelo motivo de 2012 ser o ano base para a comparação. Portanto, 2012 não apresenta ganho relativo quando comparado a si mesmo.
 ```{r}
 source("plot_helper.R")
 plot_ganho(historico_bens_prefeitos_atuais, prefeitos_cargo, prefeitos_situacao, tipoGanho = "relativo")
@@ -97,7 +100,51 @@ Para essa visualização 2012 é considerado o ano base. Portanto a linha que de
 
 Cálculo do ganho absoluto: totalBens2016 - totalBens2012
 
-O valor em 2012 é 0 para todos os prefeitos pelo motivo de 2012 ser o ano base para a comparação e por esse motivo não apresentar ganho absoluto quando comparado a si mesmo.
+O valor em 2012 é 0 para todos os prefeitos pelo motivo de 2012 ser o ano base para a comparação. Portanto, 2012 não apresenta ganho absoluto quando comparado a si mesmo.
 ```{r}
 plot_ganho(historico_bens_prefeitos_atuais, prefeitos_cargo, prefeitos_situacao, tipoGanho = "absoluto")
 ```
+
+## Cidades da paraíba e o patrimônio de seus prefeitos
+
+Para os prefeitos eleitos em 2016
+```{r}
+latlong_original <- read.csv("../data/Municipios_Brasileiros.csv", sep = ";")
+
+colnames(latlong_original) <- c("cd_IBGE", "de_Municipio", "cd_UF", "UF", "de_UF", "lat", "lon")
+
+latlong <- latlong_original %>% 
+  filter(UF == " PB") %>% 
+  select(de_Municipio, lat, lon) %>% 
+  mutate(de_Municipio = toupper(de_Municipio)) %>% 
+  mutate(de_Municipio = trimws(de_Municipio)) %>% 
+  
+  mutate(de_Municipio = if_else(de_Municipio == "SÃO DOMINGOS", "SÃO DOMINGOS DE POMBAL", de_Municipio)) %>% 
+  mutate(de_Municipio = if_else(de_Municipio == "QUIXABÁ", "QUIXABA", de_Municipio))
+
+rm(latlong_original)
+```
+
+```{r}
+historico_bens_prefeitos_atuais %>% 
+  left_join(latlong, by = c("descUnidEleitoral" = "de_Municipio")) %>%
+  
+  mutate(popup = paste("Município: ", str_to_upper(descUnidEleitoral), "<br>",
+                       "Prefeito:", nomeUrnaCandidato, "<br>",
+                       "Total de bens: ", format(totalBens2016, big.mark=".", decimal.mark = ",", nsmall = 2, scientific = FALSE), "</br>"
+                            ),
+         label = paste(descUnidEleitoral,
+                            ": R$", format(totalBens2016, big.mark=".", decimal.mark = ",", nsmall = 2, scientific = FALSE))) %>% 
+    leaflet() %>% 
+      addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+      addCircles(
+          weight = 1, 
+          radius = ~(totalBens2016)/500,
+          popup = ~popup,
+          label = ~label
+      )
+
+```
+
+
+
