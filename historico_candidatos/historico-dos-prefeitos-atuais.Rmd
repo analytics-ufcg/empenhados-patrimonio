@@ -79,59 +79,22 @@ historico_prefeitos_aumento %>%
            yaxis = list(title = "Valor declarado (R$)"))
 ```
 
-## Top10 prefeitos com maiores ganhos relativos
+## Top10 prefeitos com maior ganho relativo
 
-```{r}
-top_prefeitos_relativo <- historico_bens_prefeitos_atuais %>% 
-  mutate(ganho = totalBens2016 - totalBens2012) %>% 
-  mutate(totalBens2016 = 100*((totalBens2016 - totalBens2012)/totalBens2012)) %>% 
-  mutate(totalBens2012 = 0) %>% 
-  select(cpfCandidato, nomeCandidato, `2012` = totalBens2012, `2016` = totalBens2016, ganho, 
-         nomeUrnaCandidato, descUnidEleitoral, siglaPartido) %>% 
-  tidyr::gather("ano", "ganhoRelativo", 3:4) %>%
-  arrange(desc(ganhoRelativo))
-```
+Para essa visualização 2012 é considerado o ano base. Portanto a linha que descreve o ganho de cada prefeito parte do 0 em 2012 e vai até um valor X em 2016, no qual X é a diferença relativa entre o declarado em 2016 e 2012. Ou seja, em quanto % o patrimônio declarado pelo prefeito aumentou de 2012 para 2016.
 
-```{r}
-top_prefeitos_relativo_completo <- top_prefeitos_relativo %>% 
-  left_join(top_prefeitos_cargo) %>% 
-  left_join(top_prefeitos_situacao) %>% 
-  left_join(historico_bens_prefeitos_atuais %>% select(cpfCandidato, totalBens2012, totalBens2016))
-```
-
-```{r}
-top_n_prefeitos_relativo <- (top_prefeitos_relativo_completo %>% 
-  head(10) %>% 
-  select(cpfCandidato))$cpfCandidato
-```
-
-```{r}
-top_prefeitos_relativo_completo %>% 
-  filter(cpfCandidato %in% top_n_prefeitos_relativo) %>%
-  mutate(nomeUrnaCandidatoPartido = paste(nomeUrnaCandidato, "(", siglaPartido,")")) %>% 
-  plot_ly() %>%
-    add_trace(x = ~as.factor(ano), y = ~ganhoRelativo, color = ~nomeUrnaCandidatoPartido,
-              type = "scatter", mode = "lines+markers",
-              text = ~paste(
-              "Prefeito:", nomeCandidato, "<br>",
-              "Nome de urna:", nomeUrnaCandidato, "<br>",
-              "Total de bens (2012): R$ ", totalBens2012, "<br>",
-              "Total de bens (2016): R$ ", totalBens2016, "<br>",
-              "Ganho relativo (%): ", round(ganhoRelativo, 2), "<br>",
-              "Cargo: ", cargo, "<br>",
-              "Situação: ", situacaoEleito, "<br>",
-              "Município:", descUnidEleitoral
-              ),
-            hoverinfo = "text") %>%
-    layout(xaxis = list(title = ""),
-                    legend = list(orientation = "h"),
-           yaxis = list(title = "Ganho relativo (%)"))
-```
-
+Cálculo do ganho relativo: 100 * ((totalBens2016 - totalBens2012) / totalBens2012)
 ```{r}
 source("plot_helper.R")
-plot_ganho(historico_bens_prefeitos_atuais, prefeitos_cargo, prefeitos_situacao, tipoGanho = "absoluto")
+plot_ganho(historico_bens_prefeitos_atuais, prefeitos_cargo, prefeitos_situacao, tipoGanho = "relativo")
 ```
 
+## Top10 prefeitos com maior ganho absoluto
 
+Para essa visualização 2012 é considerado o ano base. Portanto a linha que descreve o ganho de cada prefeito parte do 0 em 2012 e vai até um valor X em 2016, no qual X é a diferença absoluta entre o declarado em 2016 e 2012. Ou seja, quantos reais a mais o prefeito declarou em 2016 com relação a 2012. 
 
+Cálculo do ganho absoluto: totalBens2016 - totalBens2012
+
+```{r}
+plot_ganho(historico_bens_prefeitos_atuais, prefeitos_cargo, prefeitos_situacao, tipoGanho = "absoluto")
+```

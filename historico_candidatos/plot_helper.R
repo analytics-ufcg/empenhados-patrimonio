@@ -1,3 +1,8 @@
+#' @description Plota os Top 10 prefeitos atuais com maiores ganhos.
+#' @param historico_prefeitos Dados dos prefeitos atuais.
+#' @param prefeitos_cargo Prefeitos e cargo por ano.
+#' @param prefeitos_situacao Prefeitos e situação da eleição por ano.
+#' @param tipoGanho Indica o tipo de Ganho. Pode ser absoluto ou relativo.
 plot_ganho <- function(historico_prefeitos, prefeitos_cargo, prefeitos_situacao, tipoGanho = "relativo"){
   
   tipoGanhoEntrada <- tipoGanho
