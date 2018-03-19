@@ -27,7 +27,7 @@ source("load_historico.R")
 
 # Aumento do patrimônio dos atuais prefeitos de 2012 para 2016
 ```{r}
-top_prefeitos_ganho <- historico_bens_prefeitos_atuais %>% 
+prefeitos_ganho_wide <- historico_bens_prefeitos_atuais %>% 
   mutate(ganho = totalBens2016 - totalBens2012) %>% 
   select(cpfCandidato, nomeCandidato, `2012` = totalBens2012, `2016` = totalBens2016, ganho, 
          nomeUrnaCandidato, siglaPartido, descUnidEleitoral) %>% 
@@ -52,7 +52,7 @@ prefeitos_situacao <- historico_bens_prefeitos_atuais %>%
 ```
 
 ```{r}
-historico_prefeitos_aumento <- top_prefeitos_ganho %>% 
+historico_prefeitos_aumento <- prefeitos_ganho_wide %>% 
   left_join(prefeitos_cargo) %>% 
   left_join(prefeitos_situacao)
 ```
@@ -84,6 +84,8 @@ historico_prefeitos_aumento %>%
 Para essa visualização 2012 é considerado o ano base. Portanto a linha que descreve o ganho de cada prefeito parte do 0 em 2012 e vai até um valor X em 2016, no qual X é a diferença relativa entre o declarado em 2016 e 2012. Ou seja, em quanto % o patrimônio declarado pelo prefeito aumentou de 2012 para 2016.
 
 Cálculo do ganho relativo: 100 * ((totalBens2016 - totalBens2012) / totalBens2012)
+
+O valor em 2012 é 0 para todos os prefeitos pelo motivo de 2012 ser o ano base para a comparação e por esse motivo não apresentar ganho relativo quando comparado a si mesmo.
 ```{r}
 source("plot_helper.R")
 plot_ganho(historico_bens_prefeitos_atuais, prefeitos_cargo, prefeitos_situacao, tipoGanho = "relativo")
@@ -95,6 +97,7 @@ Para essa visualização 2012 é considerado o ano base. Portanto a linha que de
 
 Cálculo do ganho absoluto: totalBens2016 - totalBens2012
 
+O valor em 2012 é 0 para todos os prefeitos pelo motivo de 2012 ser o ano base para a comparação e por esse motivo não apresentar ganho absoluto quando comparado a si mesmo.
 ```{r}
 plot_ganho(historico_bens_prefeitos_atuais, prefeitos_cargo, prefeitos_situacao, tipoGanho = "absoluto")
 ```
