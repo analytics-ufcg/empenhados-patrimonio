@@ -31,13 +31,10 @@ prefeitos_bens2012 <- prefeitos2012 %>%
   left_join(cand_bens_group2012) %>% 
   arrange(desc(totalBens2012))
 
-rm(prefeitos2012)
 # Prefeitos eleitos em 2016 e quanto ele declarou
 prefeitos_bens2016 <- prefeitos2016 %>% 
   left_join(cand_bens_group2016) %>% 
   arrange(desc(totalBens2016))
-
-rm(prefeitos2016)
 
 # Prefeitos reeleitos e a diferença entre o total declarado em 2016 e 2012 
 prefeitos_reeleitos <- prefeitos_bens2012 %>% 
@@ -47,3 +44,34 @@ prefeitos_reeleitos <- prefeitos_bens2012 %>%
   mutate(ganho = totalBens2016 - totalBens2012) %>% 
   arrange(desc(ganho))
 
+
+cand_prefeitos_2012 <- candidatos_2012 %>%
+  filter(codCargo == 11, codSituacaoEleito != 6) %>%
+  select(sequencialCandidato, siglaUnidEleitoral, descUnidEleitoral, siglaUF,
+         nomeCandidato, nomeUrnaCandidato, cpfCandidato, siglaPartido, descSituacaoEleito)
+
+cand_prefeitos_2016 <- candidatos_2016 %>%
+  filter(codCargo == 11, codSituacaoEleito != 6) %>%
+  select(sequencialCandidato, siglaUnidEleitoral, descUnidEleitoral, siglaUF,
+         nomeCandidato, nomeUrnaCandidato, cpfCandidato, siglaPartido, descSituacaoEleito)
+
+cand_prefeitos_bens_2012 <- cand_prefeitos_2012 %>%
+  left_join(cand_bens_group2012) %>% 
+  arrange(desc(totalBens2012))
+
+cand_prefeitos_bens_2016 <- cand_prefeitos_2016 %>%
+  left_join(cand_bens_group2016) %>% 
+  arrange(desc(totalBens2016))
+
+cand_prefeitos_bens_2012_2016 <- cand_prefeitos_bens_2012 %>%
+  inner_join(cand_prefeitos_bens_2016 %>% 
+               select(cpfCandidato,
+                      siglaPartido2016 = siglaPartido,
+                      descSituacaoEleito2016 = descSituacaoEleito, totalBens2016), 
+             by = "cpfCandidato") %>% 
+  rename(siglaPartido2012 = siglaPartido, descSituacaoEleito2012 = descSituacaoEleito) %>%
+  arrange(desc(totalBens2016))
+
+
+rm(prefeitos2012)
+rm(prefeitos2016)

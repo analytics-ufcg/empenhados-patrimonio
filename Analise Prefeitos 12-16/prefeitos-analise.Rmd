@@ -208,7 +208,92 @@ plot_ly(
 ```
 
 
+# Candidatos que se candidataram a prefeito em 2012 e 2016
+## Ganho absoluto entre as eleições para todos os candidatos
 
+```{r}
+# cand_prefeitos_bens_2012_2016 %>%
+#   mutate(ganho = totalBens2016 - totalBens2012) %>%
+#   plot_ly() %>%
+#   add_histogram(x = ~ganho, 
+#                 text = "R$",
+#                 hoverinfo = "x+text") %>%
+#   layout(xaxis = list(title = 'Ganho Real entre 2012 e 2016'),
+#          yaxis = list(title = '', fixedrange = TRUE))
+
+cand_prefeitos_bens_2012_2016 %>% 
+  mutate(ganho = totalBens2016 - totalBens2012) %>%
+  plot_ly() %>%
+  add_trace(y = ~ganho, type = "box", jitter = 0.1, name = " ") %>%
+  layout(title = "", hovermode = "x",
+         yaxis = list(title = "Ganho Real entre 2012 e 2016"),
+         xaxis = list(title = "Candidatos"))
+```
+
+## Ganho absoluto dos candidatos que mais ganharam (Top 10)
+
+```{r}
+cand_prefeitos_bens_2012_2016 %>%
+  mutate(ganho = totalBens2016 - totalBens2012) %>%
+  arrange(desc(ganho)) %>%
+  head(10) %>%
+  plot_ly(orientation = 'h') %>%
+  add_bars(y = ~reorder(nomeUrnaCandidato, ganho), x=~ganho, color=~descSituacaoEleito2012,
+           text = ~paste("Nome:", nomeCandidato, "<br>",
+                         "CPF:", cpfCandidato, "<br>",
+                         "Município:", descUnidEleitoral, "<br>",
+                         "Situação em 2012:", descSituacaoEleito2012, "<br>",
+                         "Situação em 2016:", descSituacaoEleito2016),
+           hoverinfo = "text") %>%
+  layout(xaxis = list(title = 'Ganho Real entre 2012 e 2016'),
+         yaxis = list(title = '', fixedrange = TRUE),
+         margin = list(l = 150))
+```
+
+## Ganho relativo entre as eleições para todos os candidatos
+
+```{r}
+# cand_prefeitos_bens_2012_2016 %>%
+#   mutate(ganhoRelativo = round((totalBens2016 - totalBens2012) / totalBens2012 * 100, 2)) %>%
+#   plot_ly() %>%
+#   add_histogram(x = ~ganhoRelativo,
+#                 text = "%",
+#                 hoverinfo = "x+text",
+#                 autobinx = FALSE,
+#                 xbins = list(start=-150, end=2850, size=50)) %>%
+#   layout(xaxis = list(title = 'Ganho Percentual entre 2012 e 2016'),
+#          yaxis = list(title = '', fixedrange = TRUE))
+
+cand_prefeitos_bens_2012_2016 %>% 
+  mutate(ganhoRelativo = round((totalBens2016 - totalBens2012) / totalBens2012 * 100, 2))  %>%
+  plot_ly() %>%
+  add_trace(y = ~ganhoRelativo, type = "box", jitter = 0.1, name = " ") %>%
+  layout(title = "", hovermode = "x",
+         yaxis = list(title = "Ganho Percentual entre 2012 e 2016"),
+         xaxis = list(title = "Candidatos"))
+```
+
+## Ganho absoluto dos candidatos que mais ganharam (Top 10)
+
+```{r}
+cand_prefeitos_bens_2012_2016 %>%
+  mutate(ganhoRelativo = round((totalBens2016 - totalBens2012) / totalBens2012 * 100, 2)) %>%
+  arrange(desc(ganhoRelativo)) %>%
+  head(15) %>%
+  plot_ly(orientation = 'h') %>%
+  add_bars(y = ~reorder(nomeUrnaCandidato, ganhoRelativo), x=~ganhoRelativo, color = ~descSituacaoEleito2012,
+           text = ~paste("Nome:", nomeCandidato, "<br>",
+                         "CPF:", cpfCandidato, "<br>",
+                         "Município:", descUnidEleitoral, "<br>",
+                         "Situação em 2012:", descSituacaoEleito2012, "<br>",
+                         "Situação em 2016:", descSituacaoEleito2016, "<br>",
+                         "Ganho Percentual:", ganhoRelativo, "%"),
+           hoverinfo = "text") %>%
+  layout(xaxis = list(title = 'Ganho Percentual entre 2012 e 2016'),
+         yaxis = list(title = '', fixedrange = TRUE),
+         margin = list(l = 150))
+  
+```
 
 
 
