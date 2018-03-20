@@ -1,6 +1,14 @@
 ---
 title: "Prefeito de Cabedelo"
-output: html_document
+output: 
+  html_document:
+    fig_height: 7
+    theme: paper
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
 ---
 
 ```{r setup, include=FALSE}
@@ -21,13 +29,16 @@ declaracao_2016 <- importDecalaracao2016("../data/bem_candidato_2016_PB.txt")
 candidatos_2016 <- importCandidatos2016("../data/consulta_cand_2016_PB.txt")
 
 
-cols <- c("sequencialCandidato", "siglaUnidEleitoral", "descUnidEleitoral", "siglaUF", "nomeCandidato", "nomeUrnaCandidato", "cpfCandidato", "siglaPartido", "descSituacaoEleito")
+cols <- c("sequencialCandidato", "siglaUnidEleitoral", "descUnidEleitoral", "siglaUF", "nomeCandidato", "nomeUrnaCandidato", "cpfCandidato", "descCargo","siglaPartido", "descSituacaoEleito")
+
+cols_2008 <- c("sequencialCandidato", "siglaUE", "descricaoUE", "siglaUF", "nomeCandidato", "nomeUrnaCandidato", "cpfCandidato", "descCargo","siglaPartido", "descSituacaoTurno")
 
 declaracao_leto_2008 <- declaracao_2008 %>%
   filter(sequencialCandidato == 9280)
 
 leto_2008 <- candidatos_2008 %>%
-  filter(sequencialCandidato == 9280)
+  filter(sequencialCandidato == 9280) %>%
+  select(cols_2008)
 
 declaracao_leto_2012  <- declaracao_2012 %>%
   filter(sequencialCandidato == 150000005081)
@@ -59,17 +70,45 @@ bens_2016 <- declaracao_leto_2016 %>%
   mutate(ano = 2016)
 
 bens_leto <- bens_2008 %>% rbind(bens_2012) %>% rbind(bens_2016)
+
+declaracao_all <- declaracao_2008 %>% rbind(declaracao_2012) %>% rbind(declaracao_2016) %>%
+  group_by(anoEleicao, sequencialCandidato) %>%
+  summarise(total = sum(valorBem))
+
+declaracao_all_ano <- declaracao_all %>%
+  group_by(anoEleicao) %>%
+  summarise(media_ano = mean(total),
+            mediana_ano = median(total))
 ```
+
+
+**Wellington Viana França (Leto)** portador do CPF nº 395.605.204-82 é o atual prefeito de Cabedelo-PB já em seu segundo mandato e antes disso (2009-2012) foi vereador do mesmo município. Esta análise tem o objetivo de detalhar os bens declarados por este em 2008, 2012 e 2016.
+
+## Total acumulado ao longo do tempo
+
+Comparamos o total declarado pelo prefeito Leto Viana com a média do total declarado por todos os candidatos.
 
 ```{r}
 plot_ly(data = bens_leto) %>%
-  add_lines(y = ~total, x = ~ano,
+  add_trace(y = ~total, x = ~ano,
             text = ~paste("Total de bens declarados: ", total, "<br>",
                           "Ano: ", ano),
-            hoverinfo = "text") %>%
+            hoverinfo = "text",
+            mode = 'lines+markers',
+            name = 'Leto') %>%
+  add_trace(data = declaracao_all_ano,
+            y = ~media_ano, x = ~anoEleicao,
+            text = ~paste("Média de bens declarados: ", round(media_ano, 2), "<br>",
+                          "Mediana de bens declarados: ", round(mediana_ano, 2), "<br>",
+                          "Ano: ", anoEleicao),
+            hoverinfo = "text",
+            mode = 'lines+markers',
+            name = 'Média geral') %>%
     layout(xaxis = list(title = 'Ano'),
-         yaxis = list(title = 'Total de bens', fixedrange = TRUE))
+           yaxis = list(title = 'Total de bens', fixedrange = TRUE),
+           legend = list(orientation = "h"))
 ```
+
 
 ## Bens declarados em 2016
 
@@ -84,7 +123,56 @@ declaracao_leto_2016 %>%
                   "Valor:", valorBem, "<br>"
                   ),
                 hoverinfo = "text") %>%
-      layout(xaxis = list(title = "LETO",  showticklabels = FALSE),
+      layout(xaxis = list(title = "Tipo do Bem",  showticklabels = FALSE),
+             yaxis = list(title = "Valor (R$)"),
+             legend = list(orientation = "h")
+)
+```
+
+## Bens declarados em 2012
+
+```{r}
+declaracao_leto_2012 %>% 
+  mutate(detalheBemResume = paste(substr(detalheBem, 0, 45), "...")) %>% 
+  plot_ly() %>%
+      add_trace(x = ~descricaoTipoBem, y = ~valorBem, color = ~descricaoTipoBem,
+                type = "scatter", mode = "markers",
+                text = ~paste(
+                  "Descrição:", detalheBemResume, "<br>",
+                  "Valor:", valorBem, "<br>"
+                  ),
+                hoverinfo = "text") %>%
+      layout(xaxis = list(title = "Tipo do Bem",  showticklabels = FALSE),
+             yaxis = list(title = "Valor (R$)"),
+             legend = list(orientation = "h")
+)
+```
+
+
+## Bens declarados em 2008
+
+Os dados que dispomos são possuem o tipo do bem declarado, estes foram inferidos com base nas classificações de 2012 e 2016.
+```{r}
+
+descTipoBem_2008 <- c("DEPÓSITO BANCÁRIO EM CONTA CORRENTE NO PAÍS", 
+                      "CADERNETA DE POUPANÇA", 
+                      "VEÍCULO AUTOMOTOR TERRESTRE: CAMINHÃO, AUTOMÓVEL, MOTO, ETC.",
+                      "VEÍCULO AUTOMOTOR TERRESTRE: CAMINHÃO, AUTOMÓVEL, MOTO, ETC.", 
+                      "CASA", "CASA")
+
+declaracao_leto_2008$descricaoTipoBem <- descTipoBem_2008
+
+declaracao_leto_2008 %>% 
+  mutate(detalheBemResume = paste(substr(detalheBem, 0, 45), "...")) %>% 
+  plot_ly() %>%
+      add_trace(x = ~descricaoTipoBem, y = ~valorBem, color = ~descricaoTipoBem,
+                type = "scatter", mode = "markers",
+                text = ~paste(
+                  "Descrição:", detalheBemResume, "<br>",
+                  "Valor:", valorBem, "<br>"
+                  ),
+                hoverinfo = "text") %>%
+      layout(xaxis = list(title = "Tipo do Bem",  showticklabels = FALSE),
              yaxis = list(title = "Valor (R$)"),
              legend = list(orientation = "h")
 )
