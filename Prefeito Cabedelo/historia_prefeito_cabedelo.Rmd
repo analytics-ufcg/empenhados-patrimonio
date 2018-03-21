@@ -81,8 +81,7 @@ declaracao_all_ano <- declaracao_all %>%
             mediana_ano = median(total))
 ```
 
-
-**Wellington Viana França (Leto)** portador do CPF nº 395.605.204-82 é o atual prefeito de Cabedelo-PB já em seu segundo mandato e antes disso (2009-2012) foi vereador do mesmo município. Esta análise tem o objetivo de detalhar os bens declarados por este em 2008, 2012 e 2016.
+**Wellington Viana França (Leto)** portador do CPF nº 395.605.204-82 é o atual prefeito de Cabedelo-PB já em seu segundo mandato e antes disso (2009-2012) foi vereador do mesmo município. Esta análise tem o objetivo de detalhar os bens declarados por este nas eleições de 2008, 2012 e 2016.
 
 ## Total acumulado ao longo do tempo
 
@@ -176,5 +175,21 @@ declaracao_leto_2008 %>%
              yaxis = list(title = "Valor (R$)"),
              legend = list(orientation = "h")
 )
+```
+
+## Diferença relativa de patrimônio
+
+A razão entre o total declarado em uma eleição e o total declarado na eleição anterior. Ou seja, indica quantas vezes o patrimônio aumentou de uma eleição para a outra.
+
+```{r}
+bens_leto$dif_rel <- c(NA, bens_leto$total[2] / bens_leto$total[1], 
+                       bens_leto$total[3] / bens_leto$total[2])
+
+plot_ly(bens_leto) %>%
+  add_bars(y = ~round(dif_rel, 2), x = c(NA,"2008-2012", "2012-2016"),
+           type = 'bar') %>%
+   layout(xaxis = list(title = "Intervalo"),
+             yaxis = list(title = "Diferença relativa"))
+
 ```
 
