@@ -1,11 +1,11 @@
 ---
-title: "Prefeitos e bens declarados"
+title: "Prefeitos e seus bens declarados"
 output: 
   html_document:
     fig_height: 7
     theme: paper
     toc: true
-    toc_depth: 2
+    toc_depth: 1
     toc_float:
       collapsed: false
       smooth_scroll: false
@@ -33,7 +33,30 @@ top_prefeitos_reeleitos <- prefeitos_reeleitos %>%
   arrange(desc(ganho))
 ```
 
-# Top 10 prefeitos mais ricos em 2012
+# Prefeitos eleitos em 2012
+
+## Patrimônio de todos os prefeitos eleitos em 2012
+Abaixo, pode ser visualizada a distribuição do patrimônio de todos os prefeitos eleitos em 2012. Nessa visualização e em outras similares que serão encontradas nas próximas seções, os valores destacados ao passar o mouse sobre a visualização indicam, de cima para baixo:
+
+  - O valor máximo encontrado;
+  - O limite superior para classificar um valor como atípico;
+  - O valor que indica que 75% dos valores são menores;
+  - O valor mediano encontrado;
+  - O valor que indica que 25% dos valores são menores;
+  - O limite inferior para classificar um valor como atípico;
+  - O valor mínimo encontrado;
+  
+  
+```{r}
+prefeitos_bens2012 %>% 
+  plot_ly() %>%
+  add_trace(y = ~totalBens2012, type = "box", jitter = 0.1, name = " ") %>%
+  layout(title = "", hovermode = "x",
+         yaxis = list(title = "Total de bens declarados"),
+         xaxis = list(title = "Prefeitos"))
+```
+
+## Patrimônio dos 10 prefeitos mais ricos eleitos em 2012
 ```{r}
 plot_ly(data = head(prefeitos_bens2012, 10), orientation = 'h') %>%
   
@@ -49,17 +72,19 @@ plot_ly(data = head(prefeitos_bens2012, 10), orientation = 'h') %>%
          margin = list(l = 150))
 ```
 
-### Todos os prefeitos eleitos em 2012
+# Prefeitos eleitos em 2016
+
+## Patrimônio de todos os prefeitos eleitos em 2016
 ```{r}
-prefeitos_bens2012 %>% 
+prefeitos_bens2016 %>% 
   plot_ly() %>%
-  add_trace(y = ~totalBens2012, type = "box", jitter = 0.1, name = " ") %>%
+  add_trace(y = ~totalBens2016, type = "box", jitter = 0.1, name = " ") %>%
   layout(title = "", hovermode = "x",
          yaxis = list(title = "Total de bens declarados"),
          xaxis = list(title = "Prefeitos"))
 ```
 
-# Top 10 prefeitos mais ricos em 2016
+## Patrimônio dos 10 prefeitos mais ricos eleitos em 2016
 ```{r}
 plot_ly(data = head(prefeitos_bens2016, 10), orientation = 'h') %>%
   
@@ -75,18 +100,10 @@ plot_ly(data = head(prefeitos_bens2016, 10), orientation = 'h') %>%
          margin = list(l = 150))
 ```
 
-### Todos os prefeitos eleitos em 2016
-```{r}
-prefeitos_bens2016 %>% 
-  plot_ly() %>%
-  add_trace(y = ~totalBens2016, type = "box", jitter = 0.1, name = " ") %>%
-  layout(title = "", hovermode = "x",
-         yaxis = list(title = "Total de bens declarados"),
-         xaxis = list(title = "Prefeitos"))
-```
-
 # Prefeitos eleitos em 2012 e reeleitos em 2016
-## Patrimônio dos prefeitos eleitos em 2012 e 2016 (top10)
+
+## Evolução do patrimônio dos prefeitos reeleitos em 2016 (top10)
+
 ```{r}
 top_prefeitos_reeleitos %>% 
   head(20) %>% 
@@ -104,7 +121,19 @@ top_prefeitos_reeleitos %>%
            yaxis = list(title = "Valor declarado (R$)"))
 ```
 
-## Diferença absoluta entre o patrimônio de 2016 e 2012 (top10)
+## Diferença absoluta entre o patrimônio de 2012 e 2016 para todos os prefeitos reeleitos
+
+Existem casos de prefeitos que tiveram seu patrimônio reduzido.
+```{r}
+prefeitos_reeleitos %>% 
+  plot_ly() %>%
+  add_trace(y = ~ganho, type = "box", jitter = 0.1, name = " ") %>%
+  layout(title = "", hovermode = "x",
+         yaxis = list(title = "Diferença absoluta entre 2016 e 2012"),
+         xaxis = list(title = "Prefeitos"))
+```
+
+## Diferença absoluta entre o patrimônio de 2012 e 2016 (top10)
 
 A diferença em reais entre o total declarado em 2016 e o total declarado em 2012.
 ```{r}
@@ -123,19 +152,19 @@ plot_ly(data = head(prefeitos_reeleitos, 10), orientation = 'h') %>%
          margin = list(l = 150))
 ```
 
-### Diferença absoluta para todos os prefeitos reeleitos
-
-Existem casos de prefeitos que tiveram seu patrimônio reduzido.
+## Diferença relativa entre o patrimônio de 2012 e 2016 para todos os prefeitos reeleitos
 ```{r}
 prefeitos_reeleitos %>% 
+  mutate(ganhoRelativo = totalBens2016/totalBens2012) %>%
+  arrange(desc(ganhoRelativo)) %>%
   plot_ly() %>%
-  add_trace(y = ~ganho, type = "box", jitter = 0.1, name = " ") %>%
+  add_trace(y = ~ganhoRelativo, type = "box", jitter = 0.1, name = " ") %>%
   layout(title = "", hovermode = "x",
-         yaxis = list(title = "Diferença absoluta entre 2016 e 2012"),
+         yaxis = list(title = "Diferença relativa entre 2016 e 2012"),
          xaxis = list(title = "Prefeitos"))
 ```
 
-## Diferença relativa entre o patrimônio de 2016 e 2012 (top10)
+## Diferença relativa entre o patrimônio de 2012 e 2016 (top10)
 
 A razão entre o total declarado em 2016 e o total declarado em 2012. Ou seja, quantas vezes o patrimônio aumentou em 2016 com relação a 2012.
 ```{r}
@@ -155,19 +184,6 @@ prefeitos_reeleitos %>%
          yaxis = list(title = '', fixedrange = TRUE),
          margin = list(l = 150))
 ```
-
-### Diferença relativa para todos os prefeitos reeleitos
-```{r}
-prefeitos_reeleitos %>% 
-  mutate(ganhoRelativo = totalBens2016/totalBens2012) %>%
-  arrange(desc(ganhoRelativo)) %>%
-  plot_ly() %>%
-  add_trace(y = ~ganhoRelativo, type = "box", jitter = 0.1, name = " ") %>%
-  layout(title = "", hovermode = "x",
-         yaxis = list(title = "Diferença relativa entre 2016 e 2012"),
-         xaxis = list(title = "Prefeitos"))
-```
-
 
 ## Bens acumulados do prefeito x IDH do município em questão
 
@@ -202,14 +218,17 @@ plot_ly(
                 '<br>Prefeito:', nomeUrnaCandidato, 
                 "<br>IDH: ", vl_IDHM, 
                 '<br>Total Bens:', totalBens2016),
-  color = ~-vl_IDHM) %>%
+  color = ~-vl_IDHM,
+  hoverinfo = "text") %>%
   layout(xaxis = x_axis, yaxis = y_axis)
 
 ```
 
 
-# Candidatos que se candidataram a prefeito em 2012 e 2016
-## Ganho absoluto entre as eleições para todos os candidatos
+# Candidatos que se concorreram a prefeito em 2012 e 2016
+Para esta etapa da análise, a evolução do patrimônio é avaliada para todos os candidatos que concorreram ao cargo de prefeito nas eleições de 2012 e 2016, independente de terem sido eleitos ou não.
+
+## Diferença absoluta entre o patrimônio de 2012 e 2016 para todos os candidatos
 
 ```{r}
 # cand_prefeitos_bens_2012_2016 %>%
@@ -230,7 +249,9 @@ cand_prefeitos_bens_2012_2016 %>%
          xaxis = list(title = "Candidatos"))
 ```
 
-## Ganho absoluto dos candidatos que mais ganharam (Top 10)
+## Diferença absoluta entre o patrimônio de 2012 e 2016 dos candidatos que mais ganharam (Top 10)
+Abaixo é possível observar o crescimento absoluto do patrimônio dos candidatos entre as eleições de 2012 e 2016.
+A cor das barras indica se o candidato foi eleito no ano de 2012.
 
 ```{r}
 cand_prefeitos_bens_2012_2016 %>%
@@ -250,7 +271,7 @@ cand_prefeitos_bens_2012_2016 %>%
          margin = list(l = 150))
 ```
 
-## Ganho relativo entre as eleições para todos os candidatos
+## Diferença relativa entre o patrimônio de 2012 e 2016 para todos os candidatos
 
 ```{r}
 # cand_prefeitos_bens_2012_2016 %>%
@@ -273,7 +294,9 @@ cand_prefeitos_bens_2012_2016 %>%
          xaxis = list(title = "Candidatos"))
 ```
 
-## Ganho absoluto dos candidatos que mais ganharam (Top 10)
+## Diferença relativa entre o patrimônio de 2012 e 2016 dos candidatos que mais ganharam (Top 10)
+Abaixo é possível observar o crescimento relativo do patrimônio dos candidatos entre as eleições de 2012 e 2016.
+Mais uma vez, a cor das barras indica se o candidato foi eleito no ano de 2012.
 
 ```{r}
 cand_prefeitos_bens_2012_2016 %>%
@@ -296,5 +319,53 @@ cand_prefeitos_bens_2012_2016 %>%
 ```
 
 
+# Candidatos eleitos x candidatos não-eleitos
+Abaixo é possível comparar a evolução do patrimônio dos candidatos eleitos em 2012 com a evolução do pratimônio dos não eleitos no referido ano.
 
+## Comparação do aumento absoluto de patrimônio para os candidatos eleitos e não-eleitos em 2012
+```{r}
+cand_prefeitos_bens_2012_2016_abs <- cand_prefeitos_bens_2012_2016 %>%
+  mutate(ganho = totalBens2016 - totalBens2012) 
 
+cand_prefeitos_bens_2012_2016_abs %>%
+  plot_ly(alpha = 0.6) %>%
+  add_histogram(data = cand_prefeitos_bens_2012_2016_abs %>%
+                  filter(descSituacaoEleito2012 == "ELEITO"), 
+                x = ~ganho, name = "Eleitos em 2012",
+                autobinx = FALSE,
+                xbins = list(start=-7e6, end=4e6, size=5e5),
+                histnorm = "percent") %>%
+  add_histogram(data = cand_prefeitos_bens_2012_2016_abs %>%
+                  filter(descSituacaoEleito2012 == "NÃO ELEITO"),
+                x = ~ganho, name = "Não eleitos em 2012",
+                autobinx = FALSE,
+                xbins = list(start=-7e6, end=4e6, size=5e5),
+                histnorm = "percent") %>%
+  layout(xaxis = list(title = "Ganho absoluto entre 2012 e 2016"),
+         yaxis = list(title = "Percentual de Ocorrências"),
+         barmode = "overlay")
+
+rm(cand_prefeitos_bens_2012_2016_abs)
+```
+
+## Comparação do aumento relativo de patrimônio para os candidatos eleitos e não-eleitos em 2012
+```{r}
+cand_prefeitos_bens_2012_2016_rel <- cand_prefeitos_bens_2012_2016 %>%
+  mutate(ganhoRelativo = round((totalBens2016 - totalBens2012) / totalBens2012 * 100, 2))
+
+cand_prefeitos_bens_2012_2016_rel %>%
+  plot_ly(alpha = 0.6) %>%
+  add_histogram(data = cand_prefeitos_bens_2012_2016_rel %>%
+                  filter(descSituacaoEleito2012 == "ELEITO"), x = ~ganhoRelativo,
+                name = "Eleitos em 2012",
+                histnorm = "percent") %>%
+  add_histogram(data = cand_prefeitos_bens_2012_2016_rel %>%
+                  filter(descSituacaoEleito2012 == "NÃO ELEITO"), x = ~ganhoRelativo,
+                name = "Não eleitos em 2012",
+                histnorm = "percent") %>%
+  layout(xaxis = list(title = "Ganho relativo entre 2012 e 2016"),
+         yaxis = list(title = "Percentual de Ocorrências"),
+         barmode = "overlay")
+
+rm(cand_prefeitos_bens_2012_2016_rel)
+```
