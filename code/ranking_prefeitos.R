@@ -1,5 +1,5 @@
 library(dplyr)
-source("../import_data_candidatos_bens.R")
+source(here("code/import_data_candidatos_bens.R"))
 
 declaracao_2012 <- importDecalaracao2012("../data/bem_candidato_2012_PB.txt")
 candidatos_2012 <- importCandidatos2012("../data/consulta_cand_2012_PB.txt")

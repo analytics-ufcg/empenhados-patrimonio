@@ -15,45 +15,42 @@ output:
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
 
-```{r}
+```{r setup}
 library(dplyr)
 library(plotly)
 library(rgdal)
 library(leaflet)
 library(stringr)
+library(here)
 options(scipen = 999)
 ```
 
-```{r}
-source("load_historico.R")
+```{r read}
+source(here("code/load_historico.R"))
+
+historico_bens_prefeitos_atuais <- read_historico_tse()
 ```
 
-```{r}
+```{r tidyfy}
 prefeitos_ganho_wide <- historico_bens_prefeitos_atuais %>% 
   mutate(ganho = totalBens2016 - totalBens2012) %>% 
   select(cpfCandidato, nomeCandidato, `2012` = totalBens2012, `2016` = totalBens2016, ganho, 
          nomeUrnaCandidato, siglaPartido, descUnidEleitoral) %>% 
   tidyr::gather("ano", "totalBens", 3:4) %>%
   arrange(desc(ganho))
-```
 
-```{r}
 prefeitos_cargo <- historico_bens_prefeitos_atuais %>% 
   select(cpfCandidato, `2012` = descCargo2012, `2016` = descCargo) %>% 
   mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>% 
   mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>% 
   tidyr::gather("ano", "cargo", 2:3)
-```
 
-```{r}
 prefeitos_situacao <- historico_bens_prefeitos_atuais %>% 
   select(cpfCandidato, `2012` = descSituacaoEleito2012, `2016` = descSituacaoEleito) %>% 
   mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>% 
   mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>% 
   tidyr::gather("ano", "situacaoEleito", 2:3)
-```
 
-```{r}
 historico_prefeitos_aumento <- prefeitos_ganho_wide %>% 
   left_join(prefeitos_cargo) %>% 
   left_join(prefeitos_situacao)
@@ -90,7 +87,7 @@ Cálculo do ganho relativo: 100 * ((totalBens2016 - totalBens2012) / totalBens20
 
 O valor em 2012 é 0 para todos os prefeitos pelo motivo de 2012 ser o ano base para a comparação. Portanto, 2012 não apresenta ganho relativo quando comparado a si mesmo.
 ```{r}
-source("plot_helper.R")
+source(here("code/plot_helper.R"))
 plot_ganho(historico_bens_prefeitos_atuais, prefeitos_cargo, prefeitos_situacao, tipoGanho = "relativo")
 ```
 
