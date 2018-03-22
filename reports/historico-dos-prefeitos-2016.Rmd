@@ -20,6 +20,7 @@ library(rgdal)
 library(leaflet)
 library(stringr)
 library(here)
+library(DT)
 options(scipen = 999)
 ```
 
@@ -73,7 +74,22 @@ Todas as análises abaixo incluem **prefeitos eleitos** em 2016 **que foram cand
 
 ## Ressalva: nem todo mundo declara o patrimônio
 
-TODO: listar prefeitos eleitos que não incluímos devido a declarações faltantes. 
+Alguns candidatos não declararam seus bens em 2012 ou em 2016 e por isso não foram incluídos nesta análise, estes candidatos estão listados na tabela a seguir.
+
+```{r}
+prefeitos_nao_declararam <- historico_bens %>%
+  filter(is.na(totalBens2012) | is.na(totalBens2016)) %>%
+  mutate(anoNaoDeclarado = 
+           case_when(
+             is.na(totalBens2012) & is.na(totalBens2016) ~ "Ambos",
+             is.na(totalBens2012) ~ "2012",
+             TRUE ~ "2016"
+  )) %>%
+  select(nomeUrnaCandidato, cpfCandidato, nomeCandidato, siglaPartido, descUnidEleitoral, anoNaoDeclarado) 
+
+prefeitos_nao_declararam %>%
+  datatable(colnames = c("Nome de Urna", "CPF", "Nome do Candidato", "Partido", "Unidade Eleitoral", "Ano não Declarado"))
+```
 
 ## Prefeitos que mais aumentaram seu patrimônio
 
@@ -118,25 +134,35 @@ para_labels = filter(historico_wide, rank_ganho <= 6 | rank_ganho > max(rank_gan
     
 limiar = 5e5
 
-historico_wide %>% 
-    ggplot(aes(x = `2012`, y = `2016`, colour = top)) + 
-    geom_abline(slope = 1, intercept = 0) +
-    geom_abline(slope = 1, intercept = limiar, color = "grey", linetype = 2) + 
-    geom_abline(slope = 1, intercept = -limiar, color = "grey", linetype = 2) + 
-    geom_text_repel(data = para_labels, 
-                    aes(label = paste0(nomeUrnaCandidato, " (", descUnidEleitoral, ")")), 
-                    size = 2.5, 
-                    segment.color = '#cccccc',
-                    nudge_y = if_else(para_labels$top == "ganharam_muito", 100e3, -100e3)) + 
-    geom_point(alpha = .8, size = 2) + 
-    geom_line(data = para_linhas, aes(x = x, y = y, group = nomeUrnaCandidato), alpha = .8) + 
-    scale_color_brewer(type = "qual", palette = 2) + 
-    scale_x_continuous(labels = formata_label) + 
-    scale_y_continuous(labels = formata_label) + 
-    theme(legend.position = "None") + 
-    labs(x = "Patrimônio em 2012", y = "Patrimônio em 2016")
+best_position <- c("top right", "top right", "top right", 
+                   "top right", "top left", "top center", "top center",
+                   "top left", "top center")
 
-```
+plot_ly(data = historico_wide, mode = 'lines', type = 'scatter') %>%
+  add_trace(x = ~c(0, max(`2012`)), y = ~c(0, max(`2012`)),
+            line = list(color = 'grey')) %>%
+  add_trace(x = ~c(0, max(`2012`)), y = ~c(limiar, max(`2012`)+limiar),
+            line = list(color = 'grey', dash = 'dash')) %>%
+  add_trace(x = ~c(0, max(`2012`)), y = ~c(-limiar, max(`2012`)-limiar),
+            line = list(color = 'grey', dash = 'dash')) %>%
+  add_markers(x = ~`2012`, y = ~`2016`, color = ~top) %>%
+  add_text(data = para_labels, x = ~`2012`, y = ~`2016`, color = ~top,
+           text = ~paste(nomeUrnaCandidato, "<br>(", descUnidEleitoral, ")"), 
+           textposition = best_position) %>%
+  add_trace(data = para_linhas, x = ~x, y = ~y, color = ~top,
+            type = "scatter", mode = "lines",
+            name = ~nomeUrnaCandidato,
+            x = ~`2012`, y = ~`2016`, color = ~top,
+            text = ~paste(nomeUrnaCandidato, "(", descUnidEleitoral, ")",
+                          "<br> CPF: ", cpfCandidato, 
+                          "<br> Partido: ", siglaPartido), 
+             hoverinfo = 'text') %>%
+  layout(showlegend = FALSE,
+         xaxis = list(title = "Patrimônio em 2012"),
+         yaxis = list(title = "Patrimônio em 2016",
+                      rangemode = "nonnegative"))
+
+  ```
 
 Repare que embora os patrimônios tenham geralmente aumentado (a maioria dos pontos está acima da linha preta), alguns aumentaram muito mais que outros. E os maiores aumentos não foram necessariamente daqueles que já tinham mais patrimônio.  
 
