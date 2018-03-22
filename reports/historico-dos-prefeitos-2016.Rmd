@@ -2,7 +2,7 @@
 title: "Histórico dos prefeitos eleitos em 2016"
 output: 
   html_document:
-    fig_height: 7
+    fig_height: 6
     theme: paper
     toc: true
     toc_depth: 2
@@ -13,10 +13,8 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
-```
 
-```{r setup}
-library(dplyr)
+library(tidyverse)
 library(plotly)
 library(rgdal)
 library(leaflet)
@@ -28,58 +26,123 @@ options(scipen = 999)
 ```{r read}
 source(here("code/load_historico.R"))
 
-historico_bens_prefeitos_atuais <- read_historico_tse()
+historico_bens <- read_historico_tse()
 ```
 
 ```{r tidyfy}
-prefeitos_ganho_wide <- historico_bens_prefeitos_atuais %>% 
-  mutate(ganho = totalBens2016 - totalBens2012) %>% 
-  select(cpfCandidato, nomeCandidato, `2012` = totalBens2012, `2016` = totalBens2016, ganho, 
-         nomeUrnaCandidato, siglaPartido, descUnidEleitoral) %>% 
-  tidyr::gather("ano", "totalBens", 3:4) %>%
-  arrange(desc(ganho))
+prefeitos_ganho_wide <- historico_bens %>%
+    filter(!is.na(totalBens2016), !is.na(totalBens2012)) %>% # APENAS QUEM DECLAROU EM AMBOS 
+    mutate(ganho = totalBens2016 - totalBens2012) %>%
+    select(
+        cpfCandidato,
+        nomeCandidato,
+        `2012` = totalBens2012,
+        `2016` = totalBens2016,
+        ganho,
+        nomeUrnaCandidato,
+        siglaPartido,
+        descUnidEleitoral
+    ) %>%
+    arrange(desc(ganho)) %>% 
+    mutate(rank_ganho = 1:n()) %>% 
+    tidyr::gather("ano", "totalBens", 3:4) %>%
+    mutate(ganho = if_else(ano == 2016, ganho, NA_real_))
 
-prefeitos_cargo <- historico_bens_prefeitos_atuais %>% 
-  select(cpfCandidato, `2012` = descCargo2012, `2016` = descCargo) %>% 
-  mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>% 
-  mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>% 
-  tidyr::gather("ano", "cargo", 2:3)
-
-prefeitos_situacao <- historico_bens_prefeitos_atuais %>% 
-  select(cpfCandidato, `2012` = descSituacaoEleito2012, `2016` = descSituacaoEleito) %>% 
-  mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>% 
-  mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>% 
-  tidyr::gather("ano", "situacaoEleito", 2:3)
-
+prefeitos_cargo <- historico_bens %>%
+    select(cpfCandidato, `2012` = descCargo2012, `2016` = descCargo) %>%
+    mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>%
+    mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>%
+    tidyr::gather("ano", "cargo", 2:3)
+    
+prefeitos_situacao <- historico_bens %>%
+    select(cpfCandidato, `2012` = descSituacaoEleito2012, `2016` = descSituacaoEleito) %>%
+    mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>%
+    mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>%
+    tidyr::gather("ano", "situacaoEleito", 2:3)
+    
 historico_prefeitos_aumento <- prefeitos_ganho_wide %>% 
-  left_join(prefeitos_cargo) %>% 
-  left_join(prefeitos_situacao)
-```
-Considerando os prefeitos eleitos em 2016 e que foram candidatos a qualquer cargo (prefeito, vice ou vereador) em 2012.
-
-## Top 10 prefeitos que mais aumentaram seu patrimônio
-```{r}
-historico_prefeitos_aumento %>% 
-  head(20) %>% 
-  plot_ly() %>%
-    add_trace(x = ~as.factor(ano), y = ~totalBens, color = ~nomeUrnaCandidato,
-              type = "scatter", mode = "lines+markers",
-              text = ~paste(
-              "Prefeito:", nomeCandidato, "<br>",
-              "Nome de urna:", nomeUrnaCandidato, "<br>",
-              "Total de bens: R$ ", totalBens, "<br>",
-              "Diferença (2016 - 2012): ", ganho, "<br>",
-              "Cargo: ", cargo, "<br>",
-              "Situação: ", situacaoEleito, "<br>",
-              "Município:", descUnidEleitoral
-              ),
-            hoverinfo = "text") %>%
-    layout(xaxis = list(title = ""),
-                    legend = list(orientation = "h"),
-           yaxis = list(title = "Valor declarado (R$)"))
+    left_join(prefeitos_cargo, by = c("cpfCandidato", "ano")) %>% 
+    left_join(prefeitos_situacao, by = c("cpfCandidato", "ano")) %>% 
+    mutate(ano = as.numeric(ano), 
+           nomeUrnaCandidato = stringr::str_to_title(nomeUrnaCandidato), 
+           descUnidEleitoral = stringr::str_to_title(descUnidEleitoral)) %>% 
+    filter(ano == 2012 || (cargo == "PREFEITO" & situacaoEleito == "ELEITO"))
 ```
 
-## Top10 prefeitos com maior ganho relativo
+Todas as análises abaixo incluem **prefeitos eleitos** em 2016 **que foram candidatos** a qualquer cargo (prefeito, vice ou vereador) em 2012.
+
+## Ressalva: nem todo mundo declara o patrimônio
+
+TODO: listar prefeitos eleitos que não incluímos devido a declarações faltantes. 
+
+## Prefeitos que mais aumentaram seu patrimônio
+
+### Em termos absolutos. 
+
+Na visualização abaixo, comparamos os patrimônios declarados em 2012 e 2016 dos atuais prefeitos da PB. A posição de um ponto na horizontal mostra o patrimônio em 2012 e na vertical o patrimônio em 2016. 
+
+Em um gráfico assim, se alguém mantém o mesmo patrimônio, ele fica em cima da linha preta. Quão mais longe da linha para cima, maior o aumento do patrimônio, e quão mais longe para baixo, mais o patrimônio diminuiu. Quem em 2012 tinha um patrimônio maior estará mais à direita.
+
+Para facilitar comparações, quem está acima/abaixo da linha pontinhada ganhou/perdeu pelo menos R$500 mil em seu patrimônio entre 2012 e 2016. Os maiores ganhadores/perdedores estão também destacados. 
+
+
+```{r fig.height=5}
+theme_set(theme_bw())
+library(ggrepel)
+
+formata_label = function(l){
+  paste("R$", format(l, big.mark = ".", scientific = FALSE, trim = TRUE, decimal.mark = ","))
+} 
+
+historico_prefeitos_aumento = historico_prefeitos_aumento %>%
+    mutate(
+        top = case_when(
+            rank_ganho <= 10 ~ "ganharam_muito",
+            rank_ganho > max(rank_ganho) - 6 ~ "perderam_muito",
+            TRUE ~ "sem_destaque"
+        ))
+
+historico_wide = historico_prefeitos_aumento %>% 
+    arrange(-rank_ganho) %>% 
+    select(-ganho, -cargo, -situacaoEleito) %>% 
+    spread(key = ano, value = totalBens)
+    
+para_linhas = historico_prefeitos_aumento %>%
+    group_by(cpfCandidato) %>%
+    arrange(ano) %>%
+    mutate(x = first(totalBens),
+           y = if_else(ano == 2012, first(totalBens), last(totalBens))) %>%
+    ungroup()
+
+para_labels = filter(historico_wide, rank_ganho <= 6 | rank_ganho > max(rank_ganho) -3)
+    
+limiar = 5e5
+
+historico_wide %>% 
+    ggplot(aes(x = `2012`, y = `2016`, colour = top)) + 
+    geom_abline(slope = 1, intercept = 0) +
+    geom_abline(slope = 1, intercept = limiar, color = "grey", linetype = 2) + 
+    geom_abline(slope = 1, intercept = -limiar, color = "grey", linetype = 2) + 
+    geom_text_repel(data = para_labels, 
+                    aes(label = paste0(nomeUrnaCandidato, " (", descUnidEleitoral, ")")), 
+                    size = 2.5, 
+                    segment.color = '#cccccc',
+                    nudge_y = if_else(para_labels$top == "ganharam_muito", 100e3, -100e3)) + 
+    geom_point(alpha = .8, size = 2) + 
+    geom_line(data = para_linhas, aes(x = x, y = y, group = nomeUrnaCandidato), alpha = .8) + 
+    scale_color_brewer(type = "qual", palette = 2) + 
+    scale_x_continuous(labels = formata_label) + 
+    scale_y_continuous(labels = formata_label) + 
+    theme(legend.position = "None") + 
+    labs(x = "Patrimônio em 2012", y = "Patrimônio em 2016")
+
+```
+
+Repare que embora os patrimônios tenham geralmente aumentado (a maioria dos pontos está acima da linha preta), alguns aumentaram muito mais que outros. E os maiores aumentos não foram necessariamente daqueles que já tinham mais patrimônio.  
+
+### O ganho relativo
+
+Outra forma de analisar o mesmo dado é procurar quem _multiplicou_ seu patrimônio entre 2012 e 2016. Com o mesmo aumento absoluto de R$100 mil, se além sai de um patrimônio de R\$1 mil para R\$101 mil (aumentou mais de 100x), isso chama mais a atenção do que alguém que sai de R\$ 1 milhão para R\$ 1,1 milhão (aumentou 1,1x).
 
 Para essa visualização 2012 é considerado o ano base. Portanto a linha que descreve o ganho de cada prefeito parte do 0 em 2012 e vai até um valor X em 2016, no qual X é a diferença relativa entre o declarado em 2016 e 2012. Ou seja, em quanto % o patrimônio declarado pelo prefeito aumentou de 2012 para 2016.
 
@@ -88,7 +151,7 @@ Cálculo do ganho relativo: 100 * ((totalBens2016 - totalBens2012) / totalBens20
 O valor em 2012 é 0 para todos os prefeitos pelo motivo de 2012 ser o ano base para a comparação. Portanto, 2012 não apresenta ganho relativo quando comparado a si mesmo.
 ```{r}
 source(here("code/plot_helper.R"))
-plot_ganho(historico_bens_prefeitos_atuais, prefeitos_cargo, prefeitos_situacao, tipoGanho = "relativo")
+plot_ganho(historico_bens, prefeitos_cargo, prefeitos_situacao, tipoGanho = "relativo")
 ```
 
 ## Top10 prefeitos com maior ganho absoluto
@@ -99,31 +162,34 @@ Cálculo do ganho absoluto: totalBens2016 - totalBens2012
 
 O valor em 2012 é 0 para todos os prefeitos pelo motivo de 2012 ser o ano base para a comparação. Portanto, 2012 não apresenta ganho absoluto quando comparado a si mesmo.
 ```{r}
-plot_ganho(historico_bens_prefeitos_atuais, prefeitos_cargo, prefeitos_situacao, tipoGanho = "absoluto")
+plot_ganho(historico_bens, prefeitos_cargo, prefeitos_situacao, tipoGanho = "absoluto")
 ```
 
 ## Cidades da paraíba e o patrimônio de seus prefeitos
 
 Para os prefeitos eleitos em 2016
 ```{r}
-latlong_original <- read.csv("../data/Municipios_Brasileiros.csv", sep = ";")
+latlong_original <- read.csv(here("data/Municipios_Brasileiros.csv"), sep = ";")
 
 colnames(latlong_original) <- c("cd_IBGE", "de_Municipio", "cd_UF", "UF", "de_UF", "lat", "lon")
 
-latlong <- latlong_original %>% 
-  filter(UF == " PB") %>% 
-  select(de_Municipio, lat, lon) %>% 
-  mutate(de_Municipio = toupper(de_Municipio)) %>% 
-  mutate(de_Municipio = trimws(de_Municipio)) %>% 
-  
-  mutate(de_Municipio = if_else(de_Municipio == "SÃO DOMINGOS", "SÃO DOMINGOS DE POMBAL", de_Municipio)) %>% 
-  mutate(de_Municipio = if_else(de_Municipio == "QUIXABÁ", "QUIXABA", de_Municipio))
-
+latlong <- latlong_original %>%
+    filter(UF == " PB") %>%
+    select(de_Municipio, lat, lon) %>%
+    mutate(de_Municipio = toupper(de_Municipio)) %>%
+    mutate(de_Municipio = trimws(de_Municipio)) %>%
+    mutate(de_Municipio = if_else(
+        de_Municipio == "SÃO DOMINGOS",
+        "SÃO DOMINGOS DE POMBAL",
+        de_Municipio
+    )) %>%
+    mutate(de_Municipio = if_else(de_Municipio == "QUIXABÁ", "QUIXABA", de_Municipio))
+    
 rm(latlong_original)
 ```
 
 ```{r}
-historico_bens_prefeitos_atuais %>% 
+historico_bens %>% 
   left_join(latlong, by = c("descUnidEleitoral" = "de_Municipio")) %>%
   
   mutate(popup = paste("Município: ", str_to_upper(descUnidEleitoral), "<br>",

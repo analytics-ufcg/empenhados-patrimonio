@@ -1,4 +1,7 @@
 read_historico_tse <- function(){
+    #' Cria um data.frame com o histórico de bens dos atuais prefeitos da PB a partir 
+    #' dos dados das eleições de 2012 e 2016. 
+    #' 
     library(dplyr)
     source(here("code/import_data_candidatos_bens.R"))
     
