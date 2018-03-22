@@ -189,7 +189,7 @@ para_labels = filter(historico_wide, rank_ganho <= 6 | rank_ganho > max(rank_gan
     
 limiar = 5e5
 
-best_position <- c("top right", "top right", "top right", 
+best_position <- c("top right", "top right", "top right", "top right",
                    "top right", "top left", "top center", "top center",
                    "top left", "top center")
 
@@ -200,14 +200,14 @@ plot_ly(data = historico_wide, mode = 'lines', type = 'scatter') %>%
             line = list(color = 'grey', dash = 'dash')) %>%
   add_trace(x = ~c(0, max(`2012`)), y = ~c(-limiar, max(`2012`)-limiar),
             line = list(color = 'grey', dash = 'dash')) %>%
-  add_markers(x = ~`2012`, y = ~`2016`, color = ~top) %>%
-  add_text(data = para_labels, x = ~`2012`, y = ~`2016`, color = ~top,
+  add_markers(x = ~`2012`, y = ~`2016`, color = ~top_absoluto) %>%
+  add_text(data = para_labels, x = ~`2012`, y = ~`2016`, color = ~top_absoluto,
            text = ~paste(nomeUrnaCandidato, "<br>(", descUnidEleitoral, ")"), 
            textposition = best_position) %>%
-  add_trace(data = para_linhas, x = ~x, y = ~y, color = ~top,
+  add_trace(data = para_linhas, x = ~x, y = ~y, color = ~top_absoluto,
             type = "scatter", mode = "lines",
             name = ~nomeUrnaCandidato,
-            x = ~`2012`, y = ~`2016`, color = ~top,
+            x = ~`2012`, y = ~`2016`, color = ~top_absoluto,
             text = ~paste(nomeUrnaCandidato, "(", descUnidEleitoral, ")",
                           "<br> CPF: ", cpfCandidato, 
                           "<br> Partido: ", siglaPartido), 
