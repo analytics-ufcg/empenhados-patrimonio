@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 
 library(dplyr)
 library(plotly)
+library(DT)
 source("../import_data_candidatos_bens.R")
 ```
 
@@ -35,6 +36,16 @@ cols_2008 <- c("sequencialCandidato", "siglaUE", "descricaoUE", "siglaUF", "nome
 
 declaracao_leto_2008 <- declaracao_2008 %>%
   filter(sequencialCandidato == 9280)
+
+desc_tipo_bem_2008 <- c("DEPÓSITO BANCÁRIO EM CONTA CORRENTE NO PAÍS", 
+                      "CADERNETA DE POUPANÇA", 
+                      "VEÍCULO AUTOMOTOR TERRESTRE: CAMINHÃO, AUTOMÓVEL, MOTO, ETC.",
+                      "VEÍCULO AUTOMOTOR TERRESTRE: CAMINHÃO, AUTOMÓVEL, MOTO, ETC.", 
+                      "CASA", "CASA")
+cd_tipo_bem_2008 <- c(61, 41, 21, 21, 12, 12)
+
+declaracao_leto_2008$descricaoTipoBem <- desc_tipo_bem_2008
+declaracao_leto_2008$codTipoBem <- cd_tipo_bem_2008
 
 leto_2008 <- candidatos_2008 %>%
   filter(sequencialCandidato == 9280) %>%
@@ -93,14 +104,16 @@ plot_ly(data = bens_leto) %>%
             text = ~paste("Total de bens declarados: ", total, "<br>",
                           "Ano: ", ano),
             hoverinfo = "text",
+            type = "scatter",
             mode = 'lines+markers',
             name = 'Leto') %>%
   add_trace(data = declaracao_all_ano,
             y = ~media_ano, x = ~anoEleicao,
-            text = ~paste("Média de bens declarados: ", round(media_ano, 2), "<br>",
-                          "Mediana de bens declarados: ", round(mediana_ano, 2), "<br>",
-                          "Ano: ", anoEleicao),
+            text = ~paste("Média de bens declarados: ", round(media_ano, 2),
+                          "<br>Mediana de bens declarados: ", round(mediana_ano, 2),
+                          "<br>Ano: ", anoEleicao),
             hoverinfo = "text",
+            type = "scatter",
             mode = 'lines+markers',
             name = 'Média geral') %>%
     layout(xaxis = list(title = 'Ano'),
@@ -108,74 +121,21 @@ plot_ly(data = bens_leto) %>%
            legend = list(orientation = "h"))
 ```
 
+### Bens declarados
 
-## Bens declarados em 2016
+A tabela abaixo mostra todos os bens declarados por Wellington Viana em cada umas das eleições que estamos analisando.
 
-```{r}
-declaracao_leto_2016 %>% 
-  mutate(detalheBemResume = paste(substr(detalheBem, 0, 45), "...")) %>% 
-  plot_ly() %>%
-      add_trace(x = ~descricaoTipoBem, y = ~valorBem, color = ~descricaoTipoBem,
-                type = "scatter", mode = "markers",
-                text = ~paste(
-                  "Descrição:", detalheBemResume, "<br>",
-                  "Valor:", valorBem, "<br>"
-                  ),
-                hoverinfo = "text") %>%
-      layout(xaxis = list(title = "Tipo do Bem",  showticklabels = FALSE),
-             yaxis = list(title = "Valor (R$)"),
-             legend = list(orientation = "h")
-)
-```
-
-## Bens declarados em 2012
+Os dados de 2008 dos quais dispomos não possuem o tipo nem o código do bem declarado, estes foram inferidos com base nas classificações de 2012 e 2016.
 
 ```{r}
-declaracao_leto_2012 %>% 
-  mutate(detalheBemResume = paste(substr(detalheBem, 0, 45), "...")) %>% 
-  plot_ly() %>%
-      add_trace(x = ~descricaoTipoBem, y = ~valorBem, color = ~descricaoTipoBem,
-                type = "scatter", mode = "markers",
-                text = ~paste(
-                  "Descrição:", detalheBemResume, "<br>",
-                  "Valor:", valorBem, "<br>"
-                  ),
-                hoverinfo = "text") %>%
-      layout(xaxis = list(title = "Tipo do Bem",  showticklabels = FALSE),
-             yaxis = list(title = "Valor (R$)"),
-             legend = list(orientation = "h")
-)
+bens_all <- declaracao_leto_2008 %>% rbind(declaracao_leto_2012) %>% rbind(declaracao_leto_2016)
+
+bens_all %>%
+  select(anoEleicao, descricaoTipoBem, detalheBem, valorBem) %>%
+  datatable(rownames = FALSE, colnames = c("Ano", "Tipo do bem", "Descrição", "Valor"),
+            options = list(order = list(list(3, "desc"))))
 ```
 
-
-## Bens declarados em 2008
-
-Os dados que dispomos são possuem o tipo do bem declarado, estes foram inferidos com base nas classificações de 2012 e 2016.
-```{r}
-
-descTipoBem_2008 <- c("DEPÓSITO BANCÁRIO EM CONTA CORRENTE NO PAÍS", 
-                      "CADERNETA DE POUPANÇA", 
-                      "VEÍCULO AUTOMOTOR TERRESTRE: CAMINHÃO, AUTOMÓVEL, MOTO, ETC.",
-                      "VEÍCULO AUTOMOTOR TERRESTRE: CAMINHÃO, AUTOMÓVEL, MOTO, ETC.", 
-                      "CASA", "CASA")
-
-declaracao_leto_2008$descricaoTipoBem <- descTipoBem_2008
-
-declaracao_leto_2008 %>% 
-  mutate(detalheBemResume = paste(substr(detalheBem, 0, 45), "...")) %>% 
-  plot_ly() %>%
-      add_trace(x = ~descricaoTipoBem, y = ~valorBem, color = ~descricaoTipoBem,
-                type = "scatter", mode = "markers",
-                text = ~paste(
-                  "Descrição:", detalheBemResume, "<br>",
-                  "Valor:", valorBem, "<br>"
-                  ),
-                hoverinfo = "text") %>%
-      layout(xaxis = list(title = "Tipo do Bem",  showticklabels = FALSE),
-             yaxis = list(title = "Valor (R$)"),
-             legend = list(orientation = "h")
-)
-```
 
 ## Diferença relativa de patrimônio
 
@@ -187,9 +147,10 @@ bens_leto$dif_rel <- c(NA, bens_leto$total[2] / bens_leto$total[1],
 
 plot_ly(bens_leto) %>%
   add_bars(y = ~round(dif_rel, 2), x = c(NA,"2008-2012", "2012-2016"),
-           type = 'bar') %>%
+           type = 'bar', 
+           text = ~paste("O patrimônio cresceu ", round(dif_rel, 2), " vezes entre ", ano-4, " e ", ano), 
+           hoverinfo = "text") %>%
    layout(xaxis = list(title = "Intervalo"),
              yaxis = list(title = "Diferença relativa"))
 
 ```
-
