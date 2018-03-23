@@ -193,7 +193,7 @@ best_position <- c("top right", "top right", "top right", "top right",
                    "top right", "top left", "top center", "top center",
                    "top left", "top center")
 
-plot_ly(data = historico_wide, mode = 'lines', type = 'scatter') %>%
+plot_ly(data = historico_wide, mode = 'lines', type = 'scatter', hoverinfo = "text") %>%
   add_trace(x = ~c(0, max(`2012`)), y = ~c(0, max(`2012`)),
             line = list(color = 'grey')) %>%
   add_trace(x = ~c(0, max(`2012`)), y = ~c(limiar, max(`2012`)+limiar),
@@ -231,7 +231,7 @@ Outra forma de analisar o mesmo dado é procurar quem _multiplicou_ seu patrimô
 ```{r fig.height=14, fig.width= 8}
 plot_ly(data = filter(historico_prefeitos_aumento, ganho_relativo <= 1),
         x = ~(1-ganho_relativo), y =~reorder(nome, rank_ganho_relativo), type = 'bar',
-        opacity = 0) %>%
+        opacity = 0, hoverinfo = "text") %>%
   add_trace(x = ~ganho_relativo, y =~reorder(nome, rank_ganho_relativo), type = 'bar',
             color = ~as.character(ganho_relativo > 1), opacity = 1,
             text = ~paste(nome,
@@ -268,7 +268,9 @@ A tabela abaixo detalha os prefeitos que mais aumentaram seu patrimônio entre 2
 ```{r}
 prefeitos_mais_aumentaram <- historico_wide %>%
   filter(top_absoluto == "ganharam_muito")  %>%
-  mutate(ganho = `2016` - `2012`) %>%
+  mutate(ganho = str_to_brl(`2016` - `2012`)) %>%
+  mutate(`2012` = str_to_brl(`2012`)) %>%
+  mutate(`2016` = str_to_brl(`2016`)) %>%
   select(nomeUrnaCandidato, cpfCandidato, ganho, siglaPartido, descUnidEleitoral, 
          `2012`, `2016`, nomeCandidato)
 
