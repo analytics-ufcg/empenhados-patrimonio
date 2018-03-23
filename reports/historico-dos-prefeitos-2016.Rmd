@@ -197,21 +197,25 @@ plot_ly(data = historico_wide, mode = 'lines', type = 'scatter') %>%
   add_trace(x = ~c(0, max(`2012`)), y = ~c(0, max(`2012`)),
             line = list(color = 'grey')) %>%
   add_trace(x = ~c(0, max(`2012`)), y = ~c(limiar, max(`2012`)+limiar),
-            line = list(color = 'grey', dash = 'dash')) %>%
+            line = list(color = 'grey', dash = 'dash'), opacity = 0.75) %>%
   add_trace(x = ~c(0, max(`2012`)), y = ~c(-limiar, max(`2012`)-limiar),
-            line = list(color = 'grey', dash = 'dash')) %>%
-  add_markers(x = ~`2012`, y = ~`2016`, color = ~top_absoluto) %>%
+            line = list(color = 'grey', dash = 'dash'), opacity = 0.75) %>%
   add_text(data = para_labels, x = ~`2012`, y = ~`2016`, color = ~top_absoluto,
            text = ~paste(nomeUrnaCandidato, "<br>(", descUnidEleitoral, ")"), 
-           textposition = best_position) %>%
+           textposition = best_position, opacity = 0.75) %>%
   add_trace(data = para_linhas, x = ~x, y = ~y, color = ~top_absoluto,
             type = "scatter", mode = "lines",
             name = ~nomeUrnaCandidato,
-            x = ~`2012`, y = ~`2016`, color = ~top_absoluto,
-            text = ~paste(nomeUrnaCandidato, "(", descUnidEleitoral, ")",
+            opacity = 0.75,
+            x = ~`2012`, y = ~`2016`, color = ~top_absoluto) %>%
+  add_markers(data = historico_wide, x = ~`2012`, y = ~`2016`, color = ~top_absoluto,
+              text = ~paste(nomeUrnaCandidato, "(", descUnidEleitoral, ")",
                           "<br> CPF: ", cpfCandidato, 
-                          "<br> Partido: ", siglaPartido), 
-             hoverinfo = 'text') %>%
+                          "<br> Partido: ", siglaPartido,
+                          "<br> Valor declarado em 2012: ", str_to_brl(`2012`),
+                          "<br> Valor declarado em 2016: ", str_to_brl(`2016`)),
+              hoverinfo = 'text'
+              ) %>%
   layout(showlegend = FALSE,
          xaxis = list(title = "Patrimônio em 2012"),
          yaxis = list(title = "Patrimônio em 2016",
@@ -224,28 +228,55 @@ Repare que embora os patrimônios tenham geralmente aumentado (a maioria dos pon
 
 Outra forma de analisar o mesmo dado é procurar quem _multiplicou_ seu patrimônio entre 2012 e 2016. Com o mesmo aumento absoluto de R$100 mil, se além sai de um patrimônio de R\$1 mil para R\$101 mil (aumentou mais de 100x), isso chama mais a atenção do que alguém que sai de R\$ 1 milhão para R\$ 1,1 milhão (aumentou 1,1x).
 
-```{r fig.height=14, fig.width= 5}
-p = historico_prefeitos_aumento %>% 
-    ggplot(aes(x = reorder(nome, -rank_ganho_relativo), 
-               y = ganho_relativo, 
-               fill = ganho_relativo > 1)) + 
-    geom_col() + 
-    geom_point(data = filter(historico_prefeitos_aumento, ano == 2012),
-               aes(y = 1, 
-                   x = reorder(nome, -rank_ganho_relativo), 
-                   size = totalBens), 
-               colour = "#247BA0", 
-               alpha = .75) + 
-    scale_y_log10() + 
-    labs(x = "", y = "Ganho relativo") + 
-    coord_flip() + 
-    theme(legend.position = "None") 
-p
-# ggplotly(p)
+```{r fig.height=14, fig.width= 8}
+plot_ly(data = filter(historico_prefeitos_aumento, ganho_relativo <= 1),
+        x = ~(1-ganho_relativo), y =~reorder(nome, rank_ganho_relativo), type = 'bar',
+        opacity = 0) %>%
+  add_trace(x = ~ganho_relativo, y =~reorder(nome, rank_ganho_relativo), type = 'bar',
+            color = ~as.character(ganho_relativo > 1), opacity = 1,
+            text = ~paste(nome,
+                          "<br> CPF: ", cpfCandidato,
+                          "<br> Ganho absoluto: ", str_to_brl(ganho),
+                          "<br> Ganho relativo: ", round(ganho_relativo, 3),
+                          "<br> Partido: ", siglaPartido),
+            hoverinfo = "text") %>%
+  add_trace(data = filter(historico_prefeitos_aumento, ganho_relativo > 1),
+            x = ~1, y =  ~reorder(nome, -rank_ganho_relativo), type = 'bar',
+            color = ~as.character(ganho_relativo > 1), opacity = 0) %>%
+  add_trace(x = ~(ganho_relativo-1), y =  ~reorder(nome, -rank_ganho_relativo), type = 'bar',
+            color = ~as.character(ganho_relativo > 1), opacity = 1,
+            text = ~paste(nome,
+                          "<br> CPF: ", cpfCandidato,
+                          "<br> Ganho absoluto: ", str_to_brl(ganho),
+                          "<br> Ganho relativo: ", round(ganho_relativo, 3),
+                          "<br> Partido: ", siglaPartido),
+            hoverinfo = "text") %>%
+  add_trace(data = filter(historico_prefeitos_aumento, ano == 2012),
+            x = 1, y = ~reorder(nome, -rank_ganho_relativo), 
+            type = 'scatter', mode = 'markers', size = ~totalBens, opacity = .8,
+            text = ~paste(nome, "<br> Bens em 2012: ", str_to_brl(totalBens)),
+            hoverinfo = "text") %>%
+  layout(showlegend = FALSE,
+         xaxis = list(title = "Ganho relativo", type = "log"),
+         yaxis = list(title = "", tickmode = "linear", tickfont = list(size = 10)),
+         barmode = 'stack',
+         margin = list(l = 300))
 ```
 
-TODO: tabela detalhando os que mais aumentaram.
+A tabela abaixo detalha os prefeitos que mais aumentaram seu patrimônio entre 2012 e 2016:
 
+```{r}
+prefeitos_mais_aumentaram <- historico_wide %>%
+  filter(top_absoluto == "ganharam_muito")  %>%
+  mutate(ganho = `2016` - `2012`) %>%
+  select(nomeUrnaCandidato, cpfCandidato, ganho, siglaPartido, descUnidEleitoral, 
+         `2012`, `2016`, nomeCandidato)
+
+prefeitos_mais_aumentaram %>%
+  datatable(rownames = FALSE, colnames = c("Nome de Urna", "CPF", "Valor Ganho", "Partido", "Unidade Eleitoral", "Bens em 2012", "Bens em 2016", "Nome do Candidato"),
+            options = list(order = list(list(2, "desc"))))
+
+```
 
 
 
