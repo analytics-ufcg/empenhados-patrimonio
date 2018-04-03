@@ -1,27 +1,33 @@
-read_historico_tse <- function(){
+read_historico_tse <- function(cod_cargo = 11){
     #' Cria um data.frame com o histórico de bens dos atuais prefeitos da PB a partir 
     #' dos dados das eleições de 2012 e 2016. 
     #' 
     library(dplyr)
     source(here("code/import_data_candidatos_bens.R"))
     
-    declaracao_2012 <- importDecalaracao2012("../data/bem_candidato_2012_PB.txt")
-    candidatos_2012 <- importCandidatos2012("../data/consulta_cand_2012_PB.txt")
-    declaracao_2016 <- importDecalaracao2016("../data/bem_candidato_2016_PB.txt")
-    candidatos_2016 <- importCandidatos2016("../data/consulta_cand_2016_PB.txt")
+    declaracao_2012 <- importDecalaracao2012(here("data/bem_candidato_2012_PB.txt"))
+    candidatos_2012 <- importCandidatos2012(here("data/consulta_cand_2012_PB.txt"))
+    declaracao_2016 <- importDecalaracao2016(here("data/bem_candidato_2016_PB.txt"))
+    candidatos_2016 <- importCandidatos2016(here("data/consulta_cand_2016_PB.txt"))
     
     prefeitos_atuais <- candidatos_2016 %>% 
-      filter(codCargo == 11, codSituacaoEleito %in% c(1, 2, 3)) %>% 
+      filter(codCargo == cod_cargo, codSituacaoEleito %in% c(1, 2, 3)) %>% 
       select(sequencialCandidato2016 = sequencialCandidato, siglaUnidEleitoral, descUnidEleitoral, nomeCandidato, nomeUrnaCandidato, siglaPartido, 
              codCargo, descCargo, cpfCandidato, descSituacaoEleito)
     
-    historico_prefeitos_atuais <- prefeitos_atuais %>% 
-      left_join(
-        candidatos_2012 %>% 
-          select(sequencialCandidato2012 = sequencialCandidato, cpfCandidato, codCargo2012 = codCargo, descCargo2012 = descCargo, 
-                 descSituacaoEleito2012 = descSituacaoEleito, codSituacaoEleito2012 = codSituacaoEleito),
-        by = c("cpfCandidato")
-      )
+    historico_prefeitos_atuais <- prefeitos_atuais %>%
+        left_join(
+            candidatos_2012 %>%
+                select(
+                    sequencialCandidato2012 = sequencialCandidato,
+                    cpfCandidato,
+                    codCargo2012 = codCargo,
+                    descCargo2012 = descCargo,
+                    descSituacaoEleito2012 = descSituacaoEleito,
+                    codSituacaoEleito2012 = codSituacaoEleito
+                ),
+            by = c("cpfCandidato")
+        )
     
     declaracao_prefeitos_atuais2012 <- historico_prefeitos_atuais %>% 
       select(sequencialCandidato2012) %>% 
@@ -50,3 +56,48 @@ read_historico_tse <- function(){
 
     return(historico_bens_prefeitos_atuais)
 } 
+
+patrimonios_em_wide <- function(historico){
+    prefeitos_ganho_wide <- historico %>%
+        filter(!is.na(totalBens2016), 
+               !is.na(totalBens2012)) %>% # APENAS QUEM DECLAROU EM AMBOS 
+        mutate_at(c("nomeUrnaCandidato", "descUnidEleitoral"), str_to_title) %>% 
+        mutate(ganho = totalBens2016 - totalBens2012, 
+               ganho_relativo = totalBens2016 / totalBens2012) %>%
+        select(
+            cpfCandidato,
+            nomeCandidato,
+            `2012` = totalBens2012,
+            `2016` = totalBens2016,
+            ganho,
+            ganho_relativo,
+            nomeUrnaCandidato,
+            siglaPartido,
+            descUnidEleitoral
+        ) %>%
+        arrange(desc(ganho)) %>% 
+        mutate(rank_ganho = row_number(-ganho), 
+               rank_ganho_relativo = row_number(-ganho_relativo)) %>% 
+        tidyr::gather("ano", "totalBens", 3:4) %>%
+        mutate_at(c("ganho", "ganho_relativo"), 
+                  funs(if_else(ano == 2016, ., NA_real_)))
+}
+
+patrimonios_em_historico <- function(historico_completo, patrimonios_wide){
+    cargos <- historico_completo %>%
+        select(cpfCandidato, `2012` = descCargo2012, `2016` = descCargo) %>%
+        mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>%
+        mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>%
+        tidyr::gather("ano", "cargo", 2:3)
+    
+    situacoes <- historico_completo %>%
+        select(cpfCandidato, `2012` = descSituacaoEleito2012, `2016` = descSituacaoEleito) %>%
+        mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>%
+        mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>%
+        tidyr::gather("ano", "situacaoEleito", 2:3)
+    
+    patrimonios_wide %>% 
+        left_join(cargos, by = c("cpfCandidato", "ano")) %>% 
+        left_join(situacoes, by = c("cpfCandidato", "ano")) %>% 
+        mutate(ano = as.numeric(ano))
+}
