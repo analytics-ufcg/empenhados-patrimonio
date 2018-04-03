@@ -1,0 +1,157 @@
+---
+title: "Prefeito de Cabedelo"
+output: 
+  html_document:
+    fig_height: 7
+    theme: paper
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+library(tidyverse)
+library(plotly)
+library(DT)
+library(here)
+source(here("code/import_data_candidatos_bens.R"))
+```
+
+
+```{r}
+declaracao_2008 <- importDecalaracao2008("../data/bem_candidato_2008_PB.txt")
+candidatos_2008 <- importCandidatos2008("../data/consulta_cand_2008_PB.txt")
+declaracao_2012 <- importDecalaracao2012("../data/bem_candidato_2012_PB.txt")
+candidatos_2012 <- importCandidatos2012("../data/consulta_cand_2012_PB.txt")
+declaracao_2016 <- importDecalaracao2016("../data/bem_candidato_2016_PB.txt")
+candidatos_2016 <- importCandidatos2016("../data/consulta_cand_2016_PB.txt")
+
+
+cols <- c("sequencialCandidato", "siglaUnidEleitoral", "descUnidEleitoral", "siglaUF", "nomeCandidato", "nomeUrnaCandidato", "cpfCandidato", "descCargo","siglaPartido", "descSituacaoEleito")
+
+cols_2008 <- c("sequencialCandidato", "siglaUE", "descricaoUE", "siglaUF", "nomeCandidato", "nomeUrnaCandidato", "cpfCandidato", "descCargo","siglaPartido", "descSituacaoTurno")
+
+declaracao_leto_2008 <- declaracao_2008 %>%
+  filter(sequencialCandidato == 9280)
+
+desc_tipo_bem_2008 <- c("DEPÓSITO BANCÁRIO EM CONTA CORRENTE NO PAÍS", 
+                      "CADERNETA DE POUPANÇA", 
+                      "VEÍCULO AUTOMOTOR TERRESTRE: CAMINHÃO, AUTOMÓVEL, MOTO, ETC.",
+                      "VEÍCULO AUTOMOTOR TERRESTRE: CAMINHÃO, AUTOMÓVEL, MOTO, ETC.", 
+                      "CASA", "CASA")
+cd_tipo_bem_2008 <- c(61, 41, 21, 21, 12, 12)
+
+declaracao_leto_2008$descricaoTipoBem <- desc_tipo_bem_2008
+declaracao_leto_2008$codTipoBem <- cd_tipo_bem_2008
+
+leto_2008 <- candidatos_2008 %>%
+  filter(sequencialCandidato == 9280) %>%
+  select(cols_2008)
+
+declaracao_leto_2012  <- declaracao_2012 %>%
+  filter(sequencialCandidato == 150000005081)
+
+leto_2012 <- candidatos_2012 %>%
+  filter(sequencialCandidato == 150000005081) %>%
+  select(cols)
+
+declaracao_leto_2016 <- declaracao_2016 %>%
+  filter(sequencialCandidato == 150000001347)
+
+leto_2016 <- candidatos_2016 %>%
+  filter(sequencialCandidato == 150000001347) %>%
+  select(cols)
+
+bens_2008 <- declaracao_leto_2008 %>%
+  group_by(sequencialCandidato) %>%
+  summarise(total = sum(valorBem)) %>%
+  mutate(ano = 2008)
+  
+bens_2012 <- declaracao_leto_2012 %>%
+  group_by(sequencialCandidato) %>%
+  summarise(total = sum(valorBem)) %>%
+  mutate(ano = 2012)
+
+bens_2016 <- declaracao_leto_2016 %>%
+  group_by(sequencialCandidato) %>%
+  summarise(total = sum(valorBem)) %>%
+  mutate(ano = 2016)
+
+bens_leto <- bens_2008 %>% rbind(bens_2012) %>% rbind(bens_2016)
+
+declaracao_all <- declaracao_2008 %>% rbind(declaracao_2012) %>% rbind(declaracao_2016) %>%
+  group_by(anoEleicao, sequencialCandidato) %>%
+  summarise(total = sum(valorBem))
+
+declaracao_all_ano <- declaracao_all %>%
+  group_by(anoEleicao) %>%
+  summarise(media_ano = mean(total),
+            mediana_ano = median(total))
+```
+
+**Wellington Viana França (Leto)** portador do CPF nº 395.605.204-82 é o atual prefeito de Cabedelo-PB já em seu segundo mandato e antes disso (2009-2012) foi vereador do mesmo município. Esta análise tem o objetivo de detalhar os bens declarados por este nas eleições de 2008, 2012 e 2016.
+
+## Total acumulado ao longo do tempo
+
+Comparamos o total declarado pelo prefeito Leto Viana com a média do total declarado por todos os candidatos.
+
+```{r}
+plot_ly(data = bens_leto) %>%
+  add_trace(y = ~total, x = ~ano,
+            text = ~paste("Total de bens declarados: ", total, "<br>",
+                          "Ano: ", ano),
+            hoverinfo = "text",
+            type = "scatter",
+            mode = 'lines+markers',
+            name = 'Leto') %>%
+  add_trace(data = declaracao_all_ano,
+            y = ~media_ano, x = ~anoEleicao,
+            text = ~paste("Média de bens declarados: ", round(media_ano, 2),
+                          "<br>Mediana de bens declarados: ", round(mediana_ano, 2),
+                          "<br>Ano: ", anoEleicao),
+            hoverinfo = "text",
+            type = "scatter",
+            mode = 'lines+markers',
+            name = 'Média geral') %>%
+    layout(xaxis = list(title = 'Ano'),
+           yaxis = list(title = 'Total de bens', fixedrange = TRUE),
+           legend = list(orientation = "h"))
+```
+
+### Bens declarados
+
+A tabela abaixo mostra todos os bens declarados por Wellington Viana em cada umas das eleições que estamos analisando.
+
+Os dados de 2008 dos quais dispomos não possuem o tipo nem o código do bem declarado, estes foram inferidos com base nas classificações de 2012 e 2016.
+
+```{r}
+bens_all <- declaracao_leto_2008 %>% rbind(declaracao_leto_2012) %>% rbind(declaracao_leto_2016)
+
+bens_all %>%
+  select(anoEleicao, descricaoTipoBem, detalheBem, valorBem) %>%
+  datatable(rownames = FALSE, colnames = c("Ano", "Tipo do bem", "Descrição", "Valor"),
+            options = list(order = list(list(3, "desc"))))
+```
+
+
+## Diferença relativa de patrimônio
+
+A razão entre o total declarado em uma eleição e o total declarado na eleição anterior. Ou seja, indica quantas vezes o patrimônio aumentou de uma eleição para a outra.
+
+```{r}
+bens_leto$dif_rel <- c(NA, bens_leto$total[2] / bens_leto$total[1], 
+                       bens_leto$total[3] / bens_leto$total[2])
+
+plot_ly(bens_leto) %>%
+  add_bars(y = ~round(dif_rel, 2), x = c(NA,"2008-2012", "2012-2016"),
+           type = 'bar', 
+           text = ~paste("O patrimônio cresceu ", round(dif_rel, 2), " vezes entre ", ano-4, " e ", ano), 
+           hoverinfo = "text") %>%
+   layout(xaxis = list(title = "Intervalo"),
+             yaxis = list(title = "Diferença relativa"))
+
+```
