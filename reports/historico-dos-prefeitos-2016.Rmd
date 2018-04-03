@@ -171,7 +171,7 @@ plot_ly(data = historico_wide, mode = 'lines', type = 'scatter', hoverinfo = "te
   add_trace(data = para_linhas, x = ~x, y = ~y, color = ~top_absoluto,
             type = "scatter", mode = "lines",
             name = ~nomeUrnaCandidato,
-            opacity = 0.75,
+            opacity = 0.5,
             x = ~`2012`, y = ~`2016`, color = ~top_absoluto) %>%
   add_markers(data = historico_wide, x = ~`2012`, y = ~`2016`, color = ~top_absoluto,
               text = ~paste(nomeUrnaCandidato, "(", descUnidEleitoral, ")",
@@ -179,7 +179,8 @@ plot_ly(data = historico_wide, mode = 'lines', type = 'scatter', hoverinfo = "te
                           "<br> Partido: ", siglaPartido,
                           "<br> Valor declarado em 2012: ", str_to_brl(`2012`),
                           "<br> Valor declarado em 2016: ", str_to_brl(`2016`)),
-              hoverinfo = 'text'
+              hoverinfo = 'text', 
+              opacity = .7
               ) %>%
   layout(showlegend = FALSE,
          xaxis = list(title = "Patrimônio em 2012"),
