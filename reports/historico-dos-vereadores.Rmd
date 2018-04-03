@@ -1,0 +1,228 @@
+---
+title: "Histórico dos prefeitos eleitos em 2016"
+output: 
+  html_document:
+    fig_height: 6
+    theme: paper
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+library(tidyverse)
+library(plotly)
+library(rgdal)
+library(leaflet)
+library(stringr)
+library(here)
+library(DT)
+options(scipen = 999)
+
+str_to_brl = function(l){
+  paste("R$", format(l, big.mark = ".", scientific = FALSE, trim = TRUE, decimal.mark = ","))
+} 
+
+```
+
+```{r read}
+source(here("code/load_historico.R"))
+
+historico_bens <- read_historico_tse(cod_cargo = 13)
+```
+
+```{r}
+patrimonios_wide = patrimonios_em_wide(historico_bens)
+
+historico_patrimonio = patrimonios_em_historico(historico_bens, 
+                                                       patrimonios_wide) %>% 
+    filter(ano == 2012 || (cargo == "VEREADOR" & situacaoEleito == "ELEITO"))
+
+```
+
+## Faltam declarações
+
+```{r}
+nao_declararam <- historico_bens %>%
+  filter(is.na(totalBens2012) | is.na(totalBens2016)) %>%
+  mutate(anoNaoDeclarado = 
+           case_when(
+             is.na(totalBens2012) & is.na(totalBens2016) ~ "Ambos",
+             is.na(totalBens2012) ~ "2012",
+             TRUE ~ "2016"
+           )) %>%
+    select(
+        nomeUrnaCandidato,
+        cpfCandidato,
+        nomeCandidato,
+        siglaPartido,
+        descUnidEleitoral,
+        anoNaoDeclarado
+    )
+
+nao_declararam %>%
+    datatable(
+        colnames = c(
+            "Nome de Urna",
+            "CPF",
+            "Nome do Candidato",
+            "Partido",
+            "Unidade Eleitoral",
+            "Ano não Declarado"
+        )
+    )
+```
+
+## O patrimônio
+
+```{r}
+historico_patrimonio = historico_patrimonio %>%
+    mutate(
+        top_absoluto = case_when(
+            rank_ganho <= 10 ~ "ganharam_muito",
+            rank_ganho > max(rank_ganho) - 6 ~ "perderam_muito",
+            TRUE ~ "sem_destaque"
+        ), 
+        top_relativo = case_when(
+            rank_ganho_relativo <= 10 ~ "ganharam_muito", 
+            rank_ganho_relativo > max(rank_ganho_relativo) - 10 ~ "perderam_muito",
+            TRUE ~ "sem_destaque"
+        ), 
+        nome = paste0(nomeUrnaCandidato, " (", descUnidEleitoral, ")")) 
+
+historico_wide = historico_patrimonio %>% 
+    arrange(-rank_ganho) %>%
+    select(-ganho, -cargo, -situacaoEleito, -ganho_relativo, -rank_ganho_relativo) %>% 
+    distinct() %>% 
+    spread(key = ano, value = totalBens)
+    
+para_linhas = historico_patrimonio %>%
+    group_by(cpfCandidato) %>%
+    arrange(ano) %>%
+    mutate(x = first(totalBens),
+           y = if_else(ano == 2012, first(totalBens), last(totalBens))) %>%
+    ungroup()
+
+para_labels = filter(historico_wide, rank_ganho <= 6 | rank_ganho > max(rank_ganho) - 4)
+    
+limiar = 5e5
+
+best_position <- c("top right", "top right", "top right", "top right",
+                   "top right", "top left", "top center", "top center",
+                   "top left", "top center")
+
+plot_ly(data = historico_wide, mode = 'lines', type = 'scatter', hoverinfo = "text") %>%
+  add_trace(x = ~c(0, max(`2012`)), y = ~c(0, max(`2012`)),
+            line = list(color = 'grey')) %>%
+  add_trace(x = ~c(0, max(`2012`)), y = ~c(limiar, max(`2012`)+limiar),
+            line = list(color = 'grey', dash = 'dash'), opacity = 0.75) %>%
+  add_trace(x = ~c(0, max(`2012`)), y = ~c(-limiar, max(`2012`)-limiar),
+            line = list(color = 'grey', dash = 'dash'), opacity = 0.75) %>%
+  add_text(data = para_labels, x = ~`2012`, y = ~`2016`, color = ~top_absoluto,
+           text = ~paste(nomeUrnaCandidato, "<br>(", descUnidEleitoral, ")"), 
+           textposition = best_position, opacity = 0.75) %>%
+  add_trace(data = para_linhas, x = ~x, y = ~y, color = ~top_absoluto,
+            type = "scatter", mode = "lines",
+            name = ~nomeUrnaCandidato,
+            opacity = 0.5,
+            x = ~`2012`, y = ~`2016`, color = ~top_absoluto) %>%
+  add_markers(data = historico_wide, x = ~`2012`, y = ~`2016`, color = ~top_absoluto,
+              text = ~paste0(nomeUrnaCandidato, " (", descUnidEleitoral, ")",
+                          "<br> CPF: ", cpfCandidato, 
+                          "<br> Partido: ", siglaPartido,
+                          "<br> Valor declarado em 2012: ", str_to_brl(`2012`),
+                          "<br> Valor declarado em 2016: ", str_to_brl(`2016`)),
+              hoverinfo = 'text', 
+              opacity = .7
+              ) %>%
+  layout(showlegend = FALSE,
+         xaxis = list(title = "Patrimônio em 2012"),
+         yaxis = list(title = "Patrimônio em 2016",
+                      rangemode = "nonnegative"))
+```
+
+### Região Metropolitana de JP
+
+```{r}
+patrimonios = patrimonios_em_historico(historico_bens, 
+                                       patrimonios_wide) %>% 
+    filter(ano == 2012 || (cargo == "VEREADOR" & situacaoEleito == "ELEITO"), 
+           descUnidEleitoral %in% c("João Pessoa", 
+                                    "Cabedelo", 
+                                    "Bayeux", 
+                                    "Santa Rita", 
+                                    "Conde", 
+                                    "Cruz do Espírito Santo", 
+                                    "Mamanguape", 
+                                    "Rio Tinto",
+                                    "Lucena"))
+
+patrimonios = patrimonios %>%
+    mutate(
+        top_absoluto = case_when(
+            rank_ganho <= quantile(rank_ganho, 0.1)[[1]] ~ "ganharam_muito",
+            rank_ganho > quantile(rank_ganho, 0.9)[[1]] ~ "perderam_muito",
+            TRUE ~ "sem_destaque"
+        ), 
+        top_relativo = case_when(
+            rank_ganho_relativo <= quantile(rank_ganho_relativo, 0.1)[[1]] ~ "ganharam_muito", 
+            rank_ganho_relativo > quantile(rank_ganho_relativo, 0.9)[[1]]  ~ "perderam_muito",
+            TRUE ~ "sem_destaque"
+        ), 
+        nome = paste0(nomeUrnaCandidato, " (", descUnidEleitoral, ")")) 
+
+historico_wide = patrimonios %>% 
+    arrange(-rank_ganho) %>%
+    select(-ganho, -cargo, -situacaoEleito, -ganho_relativo, -rank_ganho_relativo) %>% 
+    distinct() %>% 
+    spread(key = ano, value = totalBens)
+    
+para_linhas = patrimonios %>%
+    group_by(cpfCandidato) %>%
+    arrange(ano) %>%
+    mutate(x = first(totalBens),
+           y = if_else(ano == 2012, first(totalBens), last(totalBens))) %>%
+    ungroup()
+
+para_labels = filter(
+    historico_wide,
+    rank_ganho <= quantile(rank_ganho, 0.05)[[1]] |
+    rank_ganho > quantile(rank_ganho, 0.95)[[1]]
+    )
+    
+limiar = 5e5
+
+plot_ly(data = historico_wide, mode = 'lines', type = 'scatter', hoverinfo = "text") %>%
+  add_trace(x = ~c(0, max(`2012`)), y = ~c(0, max(`2012`)),
+            line = list(color = 'grey')) %>%
+  add_trace(x = ~c(0, max(`2012`)), y = ~c(limiar, max(`2012`)+limiar),
+            line = list(color = 'grey', dash = 'dash'), opacity = 0.75) %>%
+  add_trace(x = ~c(0, max(`2012`)), y = ~c(-limiar, max(`2012`)-limiar),
+            line = list(color = 'grey', dash = 'dash'), opacity = 0.75) %>%
+  add_text(data = para_labels, x = ~`2012`, y = ~`2016`, color = ~top_absoluto,
+           text = ~paste(nomeUrnaCandidato, "<br>(", descUnidEleitoral, ")"), 
+           opacity = 0.75) %>%
+  add_trace(data = para_linhas, x = ~x, y = ~y, color = ~top_absoluto,
+            type = "scatter", mode = "lines",
+            name = ~nomeUrnaCandidato,
+            opacity = 0.5,
+            x = ~`2012`, y = ~`2016`, color = ~top_absoluto) %>%
+  add_markers(data = historico_wide, x = ~`2012`, y = ~`2016`, color = ~top_absoluto,
+              text = ~paste0(nomeUrnaCandidato, " (", descUnidEleitoral, ")",
+                          "<br> CPF: ", cpfCandidato, 
+                          "<br> Partido: ", siglaPartido,
+                          "<br> Valor declarado em 2012: ", str_to_brl(`2012`),
+                          "<br> Valor declarado em 2016: ", str_to_brl(`2016`)),
+              hoverinfo = 'text', 
+              opacity = .7
+              ) %>%
+  layout(showlegend = FALSE,
+         xaxis = list(title = "Patrimônio em 2012"),
+         yaxis = list(title = "Patrimônio em 2016",
+                      rangemode = "nonnegative"))
+```
+

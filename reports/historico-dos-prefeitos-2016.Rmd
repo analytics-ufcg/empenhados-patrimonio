@@ -36,45 +36,10 @@ historico_bens <- read_historico_tse()
 ```
 
 ```{r tidy}
-prefeitos_ganho_wide <- historico_bens %>%
-    filter(!is.na(totalBens2016), !is.na(totalBens2012)) %>% # APENAS QUEM DECLAROU EM AMBOS 
-    mutate_at(c("nomeUrnaCandidato", "descUnidEleitoral"), str_to_title) %>% 
-    mutate(ganho = totalBens2016 - totalBens2012, 
-           ganho_relativo = totalBens2016 / totalBens2012) %>%
-    select(
-        cpfCandidato,
-        nomeCandidato,
-        `2012` = totalBens2012,
-        `2016` = totalBens2016,
-        ganho,
-        ganho_relativo,
-        nomeUrnaCandidato,
-        siglaPartido,
-        descUnidEleitoral
-    ) %>%
-    arrange(desc(ganho)) %>% 
-    mutate(rank_ganho = row_number(-ganho), 
-           rank_ganho_relativo = row_number(-ganho_relativo)) %>% 
-    tidyr::gather("ano", "totalBens", 3:4) %>%
-    mutate_at(c("ganho", "ganho_relativo"), 
-              funs(if_else(ano == 2016, ., NA_real_)))
+prefeitos_ganho_wide = patrimonios_em_wide(historico_bens)
 
-prefeitos_cargo <- historico_bens %>%
-    select(cpfCandidato, `2012` = descCargo2012, `2016` = descCargo) %>%
-    mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>%
-    mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>%
-    tidyr::gather("ano", "cargo", 2:3)
-    
-prefeitos_situacao <- historico_bens %>%
-    select(cpfCandidato, `2012` = descSituacaoEleito2012, `2016` = descSituacaoEleito) %>%
-    mutate(`2012` = if_else(is.na(`2012`), "Nada", `2012`)) %>%
-    mutate(`2016` = if_else(is.na(`2016`), "Nada", `2016`)) %>%
-    tidyr::gather("ano", "situacaoEleito", 2:3)
-    
-historico_prefeitos_aumento <- prefeitos_ganho_wide %>% 
-    left_join(prefeitos_cargo, by = c("cpfCandidato", "ano")) %>% 
-    left_join(prefeitos_situacao, by = c("cpfCandidato", "ano")) %>% 
-    mutate(ano = as.numeric(ano)) %>% 
+historico_prefeitos_aumento = patrimonios_em_historico(historico_bens, 
+                                                       prefeitos_ganho_wide) %>% 
     filter(ano == 2012 || (cargo == "PREFEITO" & situacaoEleito == "ELEITO"))
 ```
 
