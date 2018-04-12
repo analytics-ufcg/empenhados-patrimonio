@@ -246,5 +246,46 @@ prefeitos_mais_aumentaram %>%
 
 ```
 
+## Aumento de patrimônio vs. IDH do município
 
+Na visualização abaixo podemos comparar o ganho relativo de patrimônio de cada prefeito (entre 2014 e 2016) com o IDH-M (Índice de Desenvolvimento Humano Municipal) de 2010.
+
+```{r}
+library(stringr)
+utils <- src_mysql('utils', group='ministerio-publico', password=NULL, username = "empenhados")
+
+municipios = tbl(utils, 'municipio') %>%
+    collect()
+
+prefeitos_municipio <- historico_prefeitos_aumento %>%
+  filter(!is.na(ganho)) %>%
+  mutate(municipio = str_to_lower(descUnidEleitoral)) %>%
+  left_join(municipios %>% mutate(municipio = str_to_lower(de_Municipio)), 
+                         by = "municipio")
+
+# Fonte: https://cidades.ibge.gov.br/brasil/pb/pesquisa/37/30255
+idhm_estado <- 0.658 
+
+prefeitos_municipio %>%
+  mutate(top_relativo = case_when(
+    top_relativo == "perderam_muito" ~ "Perderam muito",
+    top_relativo == "ganharam_muito" ~ "Ganharam muito",
+    TRUE ~ "Sem destaque"
+  )) %>%
+    plot_ly(x = ~ganho_relativo, y = ~as.factor(vl_IDHM), type = "scatter", mode = "markers",  opacity = 0.8, color = ~top_relativo, colors = "Set1",
+            text = ~paste(nome,
+                          "<br> CPF: ", cpfCandidato,
+                          "<br> Ganho absoluto: ", str_to_brl(ganho),
+                          "<br> Ganho relativo: ", round(ganho_relativo, 3),
+                          "<br> Partido: ", siglaPartido,
+                          "<br> IDHM: ", vl_IDHM),
+            hoverinfo = "text") %>%
+  add_trace(y = idhm_estado, type = "scatter", mode = 'lines', 
+            line = list (color = "#5b8bce"), name = "IDH Estadual", 
+            color = NULL, text = paste("IDH-M do Estado: ", idhm_estado), 
+            hoverinfo = 'text') %>%
+  layout(xaxis = list(title = "Ganho Relativo", type = 'log'),
+         yaxis = list(title = "IDH Municipal"),
+         legend = list(orientation = 'h'))
+ ```
 
