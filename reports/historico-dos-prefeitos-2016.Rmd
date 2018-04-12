@@ -286,6 +286,7 @@ prefeitos_municipio %>%
             hoverinfo = 'text') %>%
   layout(xaxis = list(title = "Ganho Relativo", type = 'log'),
          yaxis = list(title = "IDH Municipal"),
-         legend = list(orientation = 'h'))
+         legend = list(orientation = 'h'),
+         margin = list(b = 30))
  ```
 
