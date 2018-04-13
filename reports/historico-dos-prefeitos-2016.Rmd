@@ -1,5 +1,5 @@
 ---
-title: "Histórico dos prefeitos eleitos em 2016"
+title: "Histórico dos prefeitos eleitos em 2016 na PB"
 output: 
   html_document:
     fig_height: 6
