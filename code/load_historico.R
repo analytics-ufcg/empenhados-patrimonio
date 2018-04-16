@@ -1,4 +1,8 @@
-read_historico_tse <- function(cod_cargo = 11){
+read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_PB.txt", 
+                               arquivo_candidatos_2 = "data/consulta_cand_2016_PB.txt",
+                               arquivo_bens_1 = "data/bem_candidato_2012_PB.txt", 
+                               arquivo_bens_2 = "data/bem_candidato_2016_PB.txt", 
+                               cod_cargo = 11){
     #' Cria um data.frame com o histórico de bens dos atuais eleitos a partir 
     #' dos dados das eleições de 2012 e 2016. 
     #' 
@@ -6,10 +10,10 @@ read_historico_tse <- function(cod_cargo = 11){
     library(stringr)
     source(here::here("code/import_tse_utils.R"))
     
-    declaracao_2012 <- importDecalaracao2012(here("data/bem_candidato_2012_PB.txt"))
-    candidatos_2012 <- importCandidatos2012(here("data/consulta_cand_2012_PB.txt"))
-    declaracao_2016 <- importDecalaracao2016(here("data/bem_candidato_2016_PB.txt"))
-    candidatos_2016 <- importCandidatos2016(here("data/consulta_cand_2016_PB.txt"))
+    declaracao_2012 <- importDecalaracao2012(arquivo_bens_1)
+    candidatos_2012 <- importCandidatos2012(arquivo_candidatos_1)
+    declaracao_2016 <- importDecalaracao2016(arquivo_bens_2)
+    candidatos_2016 <- importCandidatos2016(arquivo_candidatos_2)
     
     atuais_eleitos <- candidatos_2016 %>%
         filter(codCargo %in% cod_cargo, codSituacaoEleito %in% c(1, 2, 3)) %>%
@@ -68,6 +72,41 @@ read_historico_tse <- function(cod_cargo = 11){
         mutate_at(c("nomeUrnaCandidato", "descUnidEleitoral"), str_to_title) %>% 
         return()
 } 
+
+
+read_tse_uma_uf = function(estado, ano_eleicao1, ano_eleicao2){
+    #' Lê e processa dados de uma UF do TSE para criar ganhos de patrimônio 
+    #' já agregados. 
+    message("Lendo dados: ", estado, ", ", ano_eleicao1, "-", ano_eleicao2)
+    cria_nome_tse = function(tipo, ano, estado) {
+        prefix = ifelse(tipo == "bem", "bem_candidato_", "consulta_cand_")
+        here::here(paste0("data/",
+                          prefix,
+                          ano,
+                          "/",
+                          prefix,
+                          ano,
+                          "_",
+                          estado,
+                          ".txt")) %>% 
+            return()
+    }
+    
+    arquivo_bens_ano1 = cria_nome_tse("bem", ano_eleicao1, estado)
+    arquivo_candidatos_ano1 = cria_nome_tse("candidato", ano_eleicao1, estado)
+    arquivo_bens_ano2 = cria_nome_tse("bem", ano_eleicao2, estado)
+    arquivo_candidatos_ano2 = cria_nome_tse("candidato", ano_eleicao2, estado)
+    
+    read_historico_tse(
+        arquivo_candidatos_ano1, 
+        arquivo_candidatos_ano2,
+        arquivo_bens_ano1, 
+        arquivo_bens_ano2, 
+        cod_cargo = c(11:13)) %>% 
+        patrimonios_tidy() %>% 
+        return()
+}
+
 
 patrimonios_em_wide <- function(historico){
     historico %>%
