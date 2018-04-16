@@ -1,21 +1,32 @@
 read_historico_tse <- function(cod_cargo = 11){
-    #' Cria um data.frame com o histórico de bens dos atuais prefeitos da PB a partir 
+    #' Cria um data.frame com o histórico de bens dos atuais eleitos a partir 
     #' dos dados das eleições de 2012 e 2016. 
     #' 
     library(dplyr)
-    source(here("code/import_data_candidatos_bens.R"))
+    library(stringr)
+    source(here::here("code/import_tse_utils.R"))
     
     declaracao_2012 <- importDecalaracao2012(here("data/bem_candidato_2012_PB.txt"))
     candidatos_2012 <- importCandidatos2012(here("data/consulta_cand_2012_PB.txt"))
     declaracao_2016 <- importDecalaracao2016(here("data/bem_candidato_2016_PB.txt"))
     candidatos_2016 <- importCandidatos2016(here("data/consulta_cand_2016_PB.txt"))
     
-    prefeitos_atuais <- candidatos_2016 %>% 
-      filter(codCargo == cod_cargo, codSituacaoEleito %in% c(1, 2, 3)) %>% 
-      select(sequencialCandidato2016 = sequencialCandidato, siglaUnidEleitoral, descUnidEleitoral, nomeCandidato, nomeUrnaCandidato, siglaPartido, 
-             codCargo, descCargo, cpfCandidato, descSituacaoEleito)
+    atuais_eleitos <- candidatos_2016 %>%
+        filter(codCargo %in% cod_cargo, codSituacaoEleito %in% c(1, 2, 3)) %>%
+        select(
+            sequencialCandidato2016 = sequencialCandidato,
+            siglaUnidEleitoral,
+            descUnidEleitoral,
+            nomeCandidato,
+            nomeUrnaCandidato,
+            siglaPartido,
+            codCargo,
+            descCargo,
+            cpfCandidato,
+            descSituacaoEleito
+        )
     
-    historico_prefeitos_atuais <- prefeitos_atuais %>%
+    historico_atuais_eleitos <- atuais_eleitos %>%
         left_join(
             candidatos_2012 %>%
                 select(
@@ -29,7 +40,7 @@ read_historico_tse <- function(cod_cargo = 11){
             by = c("cpfCandidato")
         )
     
-    declaracao_prefeitos_atuais2012 <- historico_prefeitos_atuais %>% 
+    declaracao_atuais_eleitos2012 <- historico_atuais_eleitos %>% 
       select(sequencialCandidato2012) %>% 
       left_join(declaracao_2012 %>% select(sequencialCandidato, valorBem),
                 by = c("sequencialCandidato2012" = "sequencialCandidato")) %>% 
@@ -37,7 +48,7 @@ read_historico_tse <- function(cod_cargo = 11){
       group_by(sequencialCandidato2012) %>% 
       summarise(totalBens2012 = sum(valorBem))
     
-    declaracao_prefeitos_atuais2016 <- historico_prefeitos_atuais %>% 
+    declaracao_atuais_eleitos2016 <- historico_atuais_eleitos %>% 
       select(sequencialCandidato2016) %>% 
       left_join(declaracao_2016 %>% select(sequencialCandidato, valorBem),
                 by = c("sequencialCandidato2016" = "sequencialCandidato")) %>% 
@@ -45,25 +56,25 @@ read_historico_tse <- function(cod_cargo = 11){
       group_by(sequencialCandidato2016) %>% 
       summarise(totalBens2016 = sum(valorBem))
     
-    historico_bens_prefeitos_atuais <- historico_prefeitos_atuais %>% 
-      left_join(declaracao_prefeitos_atuais2012) %>% 
-      left_join(declaracao_prefeitos_atuais2016) %>% 
+    historico_bens_atuais_eleitos <- historico_atuais_eleitos %>% 
+      left_join(declaracao_atuais_eleitos2012, by = "sequencialCandidato2012") %>% 
+      left_join(declaracao_atuais_eleitos2016, "sequencialCandidato2016") %>% 
       filter(codSituacaoEleito2012 != 6 | is.na(codSituacaoEleito2012)) %>% 
       filter(!(cpfCandidato == "34303197491" & codSituacaoEleito2012 == -1))
-    
     # Caso particular de JOSE FERNANDES GORGONHO NETO em 2012 (foi candidato a prefeito em 2012 mas teve sua campanha renunciada)
     # Foi removido as ocorrências de segundo turno também
 
-    return(historico_bens_prefeitos_atuais)
+    historico_bens_atuais_eleitos %>% 
+        mutate_at(c("nomeUrnaCandidato", "descUnidEleitoral"), str_to_title) %>% 
+        return()
 } 
 
 patrimonios_em_wide <- function(historico){
-    prefeitos_ganho_wide <- historico %>%
-        filter(!is.na(totalBens2016), 
-               !is.na(totalBens2012)) %>% # APENAS QUEM DECLAROU EM AMBOS 
-        mutate_at(c("nomeUrnaCandidato", "descUnidEleitoral"), str_to_title) %>% 
+    historico %>%
+        filter(!is.na(totalBens2016),
+               !is.na(totalBens2012)) %>% # APENAS QUEM DECLAROU EM AMBOS
         mutate(ganho = totalBens2016 - totalBens2012, 
-               ganho_relativo = totalBens2016 / totalBens2012) %>%
+               ganho_relativo = totalBens2016 / totalBens2012) %>% 
         select(
             cpfCandidato,
             nomeCandidato,
@@ -73,14 +84,14 @@ patrimonios_em_wide <- function(historico){
             ganho_relativo,
             nomeUrnaCandidato,
             siglaPartido,
-            descUnidEleitoral
+            descUnidEleitoral, 
+            descCargo
         ) %>%
-        arrange(desc(ganho)) %>% 
         mutate(rank_ganho = row_number(-ganho), 
                rank_ganho_relativo = row_number(-ganho_relativo)) %>% 
         tidyr::gather("ano", "totalBens", 3:4) %>%
         mutate_at(c("ganho", "ganho_relativo"), 
-                  funs(if_else(ano == 2016, ., NA_real_)))
+                  funs(if_else(ano == 2016, ., NA_real_))) 
 }
 
 patrimonios_em_historico <- function(historico_completo, patrimonios_wide){
@@ -100,4 +111,31 @@ patrimonios_em_historico <- function(historico_completo, patrimonios_wide){
         left_join(cargos, by = c("cpfCandidato", "ano")) %>% 
         left_join(situacoes, by = c("cpfCandidato", "ano")) %>% 
         mutate(ano = as.numeric(ano))
+}
+
+
+patrimonios_tidy <- function(historico){
+    historico %>%
+        mutate(
+            ganho = totalBens2016 - totalBens2012, 
+            ganho_relativo = totalBens2016 / totalBens2012,
+            eleicao_1 = 2012, # TODO: generalizar
+            eleicao_2 = 2016, 
+            UF = "PB"
+        ) %>% 
+        select(
+            nome_urna = nomeUrnaCandidato,
+            unidade_eleitoral = descUnidEleitoral, 
+            ganho,
+            ganho_relativo,
+            patrimonio_eleicao_1 = totalBens2012,
+            patrimonio_eleicao_2 = totalBens2016,
+            sigla_partido = siglaPartido,
+            cargo_pleiteado_1 = descCargo2012,
+            resultado_1 = descSituacaoEleito2012,
+            cargo_pleiteado_2 = descCargo,
+            resultado_2 = descSituacaoEleito,
+            cpf = cpfCandidato,
+            nome_completo = nomeCandidato
+        ) 
 }

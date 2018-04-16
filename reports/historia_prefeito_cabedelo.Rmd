@@ -19,7 +19,7 @@ library(plotly)
 library(DT)
 library(stringr)
 library(here)
-source(here("code/import_data_candidatos_bens.R"))
+source(here("code/import_tse_utils.R"))
 
 str_to_brl = function(l){
     paste("R$",

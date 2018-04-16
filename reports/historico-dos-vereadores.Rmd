@@ -36,7 +36,7 @@ historico_bens <- read_historico_tse(cod_cargo = 13)
 ```
 
 ```{r}
-patrimonios_wide = patrimonios_em_wide(historico_bens)
+patrimonios_wide = patrimonios_em_wide(historico_bens) 
 
 historico_patrimonio = patrimonios_em_historico(historico_bens, 
                                                        patrimonios_wide) %>% 
