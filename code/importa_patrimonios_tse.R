@@ -23,8 +23,10 @@ dados_tse = tibble(estado = estados) %>%
 
 dados_tse %>% 
     filter(grepl("PREFEITO", cargo_pleiteado_2)) %>% 
+    distinct() %>% 
     write_csv(here("data/ganhos_prefeitos_br.csv"))
 
 dados_tse %>% 
     filter(grepl("VEREADOR", cargo_pleiteado_2)) %>% 
+    distinct() %>% 
     write_csv(here("data/ganhos_vereadores_br.csv"))
