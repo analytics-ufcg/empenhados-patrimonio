@@ -1,0 +1,57 @@
+---
+title: "Aumento do patrimônio por estado"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(viridis)
+library(ggjoy)
+```
+
+```{r}
+ganhos = read_csv(here("data/ganhos_prefeitos_br.csv")) %>% 
+    filter(!is.na(ganho))
+```
+
+```{r fig.height=8}
+ganhos %>% 
+    ggplot(aes(x = ganho, y = reorder(estado, ganho, median), fill = ..x..)) + 
+    geom_density_ridges_gradient(rel_min_height = .01) + 
+    scale_y_discrete() +
+    scale_x_continuous(expand = c(0,0)) + 
+    scale_fill_viridis(name = "Temp. [F]", option = "C") +
+    xlim(-1e6, 1e6) + 
+    theme_ridges() + 
+    theme(legend.position = "None")
+
+```
+
+```{r}
+ganhos %>% 
+    group_by(estado) %>%
+    mutate(mediana = log2(median(ganho_relativo))) %>% 
+    ungroup() %>% 
+    ggplot(aes(x = ganho_relativo, 
+               y = reorder(estado, ganho_relativo, median), 
+               fill = mediana)) + 
+    geom_density_ridges_gradient(
+        rel_min_height = .01, 
+        jittered_points = TRUE,
+        position = position_points_jitter(width = 0.05, height = 0),
+        point_shape = '|', point_size = .6, alpha = 0.8
+    ) + 
+    scale_y_discrete(name = "Estado") +
+    scale_x_log10(
+        name = "Aumento do patrimônio 2012-2016",
+        expand = c(0,0), 
+        breaks = c(.01, .1, .5, 1, 2, 10, 100),
+        labels = c("-100x", "-10x", "-2x", "1x", "2x", "10x", "100x"),
+        limits = c(.01, 100)) +
+    scale_fill_viridis(option = "C") +
+    theme_ridges() + 
+    theme(legend.position = "None")
+
+ggsave(here("reports/comparacao-ridge-prefeitos.png"), height = 7, width = 6)
+```
+
