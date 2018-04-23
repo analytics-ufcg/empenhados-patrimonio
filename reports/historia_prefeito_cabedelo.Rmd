@@ -1,6 +1,6 @@
 ---
 title: "Prefeito de Cabedelo"
-output: 
+output:
   html_document:
     fig_height: 7
     theme: paper
@@ -30,16 +30,16 @@ str_to_brl = function(l){
           trim = TRUE,
           decimal.mark = ","
           ))
-} 
+}
 ```
 
 
 ```{r carrega}
-declaracao_2008 <- importDecalaracao2008(here("data/bem_candidato_2008_PB.txt"))
+declaracao_2008 <- importDecalaracao(here("data/bem_candidato_2008_PB.txt"))
 candidatos_2008 <- importCandidatos2008(here("data/consulta_cand_2008_PB.txt"))
-declaracao_2012 <- importDecalaracao2012(here("data/bem_candidato_2012_PB.txt"))
+declaracao_2012 <- importDecalaracao(here("data/bem_candidato_2012_PB.txt"))
 candidatos_2012 <- importCandidatos2012(here("data/consulta_cand_2012_PB.txt"))
-declaracao_2016 <- importDecalaracao2016(here("data/bem_candidato_2016_PB.txt"))
+declaracao_2016 <- importDecalaracao(here("data/bem_candidato_2016_PB.txt"))
 candidatos_2016 <- importCandidatos2016(here("data/consulta_cand_2016_PB.txt"))
 
 manter_2008 <-
@@ -55,7 +55,7 @@ manter_2008 <-
     "siglaPartido",
     "descSituacaoTurno"
     )
-    
+
 manter_2012_2016 <-
     c(
     "sequencialCandidato",
@@ -72,7 +72,7 @@ manter_2012_2016 <-
 
 codigo_leto <- function(ano){
     case_when(
-        ano == 2008 ~ 9280, 
+        ano == 2008 ~ 9280,
         ano == 2012 ~ 150000005081,
         ano == 2016 ~ 150000001347,
         TRUE ~ NA_real_ )
@@ -83,14 +83,14 @@ codigo_leto <- function(ano){
 conserta_declaracao_2008 <- function(declaracao, codigo) {
   declaracao_candidato <- declaracao %>%
     filter(sequencialCandidato == codigo)
-  
-  desc_tipo_bem_2008 <- c("DEPÓSITO BANCÁRIO EM CONTA CORRENTE NO PAÍS", 
-                        "CADERNETA DE POUPANÇA", 
+
+  desc_tipo_bem_2008 <- c("DEPÓSITO BANCÁRIO EM CONTA CORRENTE NO PAÍS",
+                        "CADERNETA DE POUPANÇA",
                         "VEÍCULO AUTOMOTOR TERRESTRE: CAMINHÃO, AUTOMÓVEL, MOTO, ETC.",
-                        "VEÍCULO AUTOMOTOR TERRESTRE: CAMINHÃO, AUTOMÓVEL, MOTO, ETC.", 
+                        "VEÍCULO AUTOMOTOR TERRESTRE: CAMINHÃO, AUTOMÓVEL, MOTO, ETC.",
                         "CASA", "CASA")
   cd_tipo_bem_2008 <- c(61, 41, 21, 21, 12, 12)
-  
+
   declaracao_candidato$descricaoTipoBem <- desc_tipo_bem_2008
   declaracao_candidato$codTipoBem <- cd_tipo_bem_2008
   return(declaracao_candidato)
@@ -120,7 +120,7 @@ bens_2008 <- declaracao_leto_2008 %>%
   group_by(sequencialCandidato) %>%
   summarise(total = sum(valorBem)) %>%
   mutate(ano = 2008)
-  
+
 bens_2012 <- declaracao_leto_2012 %>%
   group_by(sequencialCandidato) %>%
   summarise(total = sum(valorBem)) %>%
@@ -131,12 +131,12 @@ bens_2016 <- declaracao_leto_2016 %>%
   summarise(total = sum(valorBem)) %>%
   mutate(ano = 2016)
 
-bens_leto <- bens_2008 %>% 
-    rbind(bens_2012) %>% 
+bens_leto <- bens_2008 %>%
+    rbind(bens_2012) %>%
     rbind(bens_2016)
 
-bens_all <- declaracao_leto_2008 %>% 
-    rbind(declaracao_leto_2012) %>% 
+bens_all <- declaracao_leto_2008 %>%
+    rbind(declaracao_leto_2012) %>%
     rbind(declaracao_leto_2016)
 
 declaracao_all <- declaracao_2008 %>%
@@ -144,7 +144,7 @@ declaracao_all <- declaracao_2008 %>%
     rbind(declaracao_2016) %>%
     group_by(anoEleicao, sequencialCandidato) %>%
     summarise(total = sum(valorBem))
-    
+
 declaracao_all_ano <- declaracao_all %>%
   group_by(anoEleicao) %>%
   summarise(media_ano = mean(total),
@@ -188,41 +188,41 @@ Os dados de 2008 dos quais dispomos não possuem o tipo nem o código do bem dec
 
 ```{r}
 bens_all %>%
-    mutate(valorBem = str_to_brl(valorBem)) %>% 
+    mutate(valorBem = str_to_brl(valorBem)) %>%
     select(anoEleicao, descricaoTipoBem, detalheBem, valorBem) %>%
     datatable(rownames = FALSE, colnames = c("Ano", "Tipo do bem", "Descrição", "Valor"),
               options = list(order = list(list(3, "desc"))))
 ```
 
 ```{r}
-bens_all %>% 
-    mutate(descricaoTipoBem = str_to_title(descricaoTipoBem)) %>% 
-    group_by(anoEleicao, descricaoTipoBem) %>% 
-    summarise(valorBem = sum(valorBem), bens = n()) %>% 
-    ungroup() %>% 
-    complete(anoEleicao, descricaoTipoBem, fill = list(valorBem = 0, bens = 0)) %>% 
+bens_all %>%
+    mutate(descricaoTipoBem = str_to_title(descricaoTipoBem)) %>%
+    group_by(anoEleicao, descricaoTipoBem) %>%
+    summarise(valorBem = sum(valorBem), bens = n()) %>%
+    ungroup() %>%
+    complete(anoEleicao, descricaoTipoBem, fill = list(valorBem = 0, bens = 0)) %>%
     ggplot(aes(x = anoEleicao, y = valorBem, colour = descricaoTipoBem)) +
-    geom_line() + 
-    geom_point(aes(size = bens)) + 
-    labs(x = "Eleição da declaração", y = "Valor por tipo de bem") + 
-    scale_y_continuous(labels = str_to_brl) + 
-    theme_minimal() 
+    geom_line() +
+    geom_point(aes(size = bens)) +
+    labs(x = "Eleição da declaração", y = "Valor por tipo de bem") +
+    scale_y_continuous(labels = str_to_brl) +
+    theme_minimal()
 ```
 
 ```{r}
-bens_all %>% 
-    mutate(descricaoTipoBem = str_to_title(descricaoTipoBem)) %>% 
-    group_by(anoEleicao, descricaoTipoBem) %>% 
-    summarise(valorBem = sum(valorBem), bens = n()) %>% 
-    ungroup() %>% 
-    complete(anoEleicao, descricaoTipoBem, fill = list(valorBem = 0, bens = 0)) %>% 
+bens_all %>%
+    mutate(descricaoTipoBem = str_to_title(descricaoTipoBem)) %>%
+    group_by(anoEleicao, descricaoTipoBem) %>%
+    summarise(valorBem = sum(valorBem), bens = n()) %>%
+    ungroup() %>%
+    complete(anoEleicao, descricaoTipoBem, fill = list(valorBem = 0, bens = 0)) %>%
     ggplot(aes(x = anoEleicao, y = valorBem, fill = descricaoTipoBem, color = descricaoTipoBem)) +
-    geom_area(alpha = .4) + 
+    geom_area(alpha = .4) +
     geom_point(aes(size = bens)) +
-    labs(x = "Eleição da declaração", y = "Valor por tipo de bem") + 
-    scale_y_continuous(labels = str_to_brl) + 
-    facet_wrap(~ descricaoTipoBem) + 
-    theme_minimal() + 
+    labs(x = "Eleição da declaração", y = "Valor por tipo de bem") +
+    scale_y_continuous(labels = str_to_brl) +
+    facet_wrap(~ descricaoTipoBem) +
+    theme_minimal() +
     theme(legend.position = "None")
 ```
 
@@ -232,13 +232,13 @@ bens_all %>%
 A razão entre o total declarado em uma eleição e o total declarado na eleição anterior. Ou seja, indica quantas vezes o patrimônio aumentou de uma eleição para a outra.
 
 ```{r}
-bens_leto$dif_rel <- c(NA, bens_leto$total[2] / bens_leto$total[1], 
+bens_leto$dif_rel <- c(NA, bens_leto$total[2] / bens_leto$total[1],
                        bens_leto$total[3] / bens_leto$total[2])
 
 plot_ly(bens_leto) %>%
   add_bars(y = ~round(dif_rel, 2), x = c(NA,"2008-2012", "2012-2016"),
-           type = 'bar', 
-           text = ~paste("O patrimônio cresceu ", round(dif_rel, 2), " vezes entre ", ano-4, " e ", ano), 
+           type = 'bar',
+           text = ~paste("O patrimônio cresceu ", round(dif_rel, 2), " vezes entre ", ano-4, " e ", ano),
            hoverinfo = "text") %>%
    layout(xaxis = list(title = "Intervalo"),
              yaxis = list(title = "Diferença relativa"))

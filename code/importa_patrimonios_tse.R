@@ -13,6 +13,7 @@ dados_tse = tibble(estado = estados) %>%
     mutate(dados = map(
         estado,
         read_tse_uma_uf,
+        cod_cargo = c(11:13),
         ano_eleicao1 = 2012,
         ano_eleicao2 = 2016
     )) %>% 

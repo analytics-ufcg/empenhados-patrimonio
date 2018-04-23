@@ -14,7 +14,7 @@ No linux/mac/ubuntu no windows:
 cd data/
 ./get_data.sh 
 
-for eleicao in 2012 2016; do 
+for eleicao in 2008 2010 2012 2014 2016; do 
     unzip -d bem_candidato_$eleicao bem_candidato_$eleicao.zip
     unzip -d consulta_cand_$eleicao consulta_cand_$eleicao.zip
 done
