@@ -83,6 +83,10 @@ importCandidatos2012 <- function(dataPath){
     return(candidatos_2012)
 }
 
+importCandidatos2014 <- function(dataPath){
+    return(importCandidatos2016(dataPath))
+}
+
 importCandidatos2016 <- function(dataPath){
   candidatos_2016 <- read_delim(dataPath, delim = ";", col_names = FALSE,
                                 locale = locale(encoding = "latin1"),
@@ -98,8 +102,4 @@ importCandidatos2016 <- function(dataPath){
                                  "despesaMaxCampanha", "codSituacaoEleito", "descSituacaoEleito", "email")
   return(candidatos_2016)
   
-}
-
-importCandidatos2014 <- function(dataPath){
-    return(importCandidatos2016(dataPath))
 }
