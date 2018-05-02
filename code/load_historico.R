@@ -7,18 +7,16 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
                                ano_eleicao2 = 2016){
     #' Cria um data.frame com o histórico de bens dos atuais eleitos a partir 
     #' dos dados das eleições dos anos passados como parâmetro.
-    #' 
     library(dplyr)
     library(stringr)
     source(here::here("code/import_tse_utils.R"))
-    
+
     declaracao_1 <- importDecalaracao(arquivo_bens_1)
     candidatos_1 <- importCandidatos(arquivo_candidatos_1, ano_eleicao1)
 
     declaracao_2 <- importDecalaracao(arquivo_bens_2)
     candidatos_2 <- importCandidatos(arquivo_candidatos_2, ano_eleicao2)
 
-    
     atuais_eleitos <- candidatos_2 %>%
         filter(codCargo %in% cod_cargo, codSituacaoEleito %in% c(1, 2, 3)) %>%
         select(
@@ -33,6 +31,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
             cpfCandidato,
             descSituacaoEleito
         )
+
     
     historico_atuais_eleitos <- atuais_eleitos %>%
         left_join(
@@ -52,25 +51,25 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
       select(sequencialCandidato1) %>% 
       left_join(declaracao_1 %>% select(sequencialCandidato, valorBem),
                 by = c("sequencialCandidato1" = "sequencialCandidato")) %>% 
-      
       group_by(sequencialCandidato1) %>% 
-      summarise(totalBens1 = sum(valorBem))
+      summarise(totalBens1 = sum(valorBem)) 
+    #%>%
+     # mutate(totalBens1 = ifelse(is.na(totalBens1), 0, totalBens1))
     
     declaracao_atuais_eleitos2 <- historico_atuais_eleitos %>% 
       select(sequencialCandidato2) %>% 
       left_join(declaracao_2 %>% select(sequencialCandidato, valorBem),
                 by = c("sequencialCandidato2" = "sequencialCandidato")) %>% 
-      
       group_by(sequencialCandidato2) %>% 
-      summarise(totalBens2 = sum(valorBem))
+      summarise(totalBens2 = sum(valorBem)) 
+    #%>%
+    # mutate(totalBens2 = ifelse(is.na(totalBens2), 0, totalBens2))
     
     historico_bens_atuais_eleitos <- historico_atuais_eleitos %>% 
       left_join(declaracao_atuais_eleitos1, by = "sequencialCandidato1") %>% 
       left_join(declaracao_atuais_eleitos2, "sequencialCandidato2") %>% 
-      filter(codSituacaoEleito1 != 6 | is.na(codSituacaoEleito1)) 
-    
-    # =================== # Ver como tratar esse caso
-    #  filter(!(cpfCandidato == "34303197491" & codSituacaoEleito1 == -1))
+      filter(codSituacaoEleito1 != 6 | is.na(codSituacaoEleito1)) %>%
+      filter(!(cpfCandidato == "34303197491" & codSituacaoEleito1 == -1))
     # Caso particular de JOSE FERNANDES GORGONHO NETO em 2012 (foi candidato a prefeito em 2012 mas teve sua campanha renunciada)
     # Foi removido as ocorrências de segundo turno também
 
@@ -96,13 +95,11 @@ read_tse_uma_uf = function(estado, ano_eleicao1, ano_eleicao2, cod_cargo){
                           ".txt")) %>% 
             return()
     }
-    
     arquivo_bens_ano1 = cria_nome_tse("bem", ano_eleicao1, estado)
     arquivo_candidatos_ano1 = cria_nome_tse("candidato", ano_eleicao1, estado)
     arquivo_bens_ano2 = cria_nome_tse("bem", ano_eleicao2, estado)
     arquivo_candidatos_ano2 = cria_nome_tse("candidato", ano_eleicao2, estado)
-    
-    
+
     read_historico_tse(
         arquivo_candidatos_ano1, 
         arquivo_candidatos_ano2,
@@ -163,6 +160,8 @@ patrimonios_em_historico <- function(historico_completo, patrimonios_wide){
 
 patrimonios_tidy <- function(historico, ano_eleicao1, ano_eleicao2){
     historico %>%
+        filter(!is.na(totalBens2),
+               !is.na(totalBens1)) %>%
         mutate(
             ganho = totalBens2 - totalBens1, 
             ganho_relativo = totalBens2 / totalBens1,

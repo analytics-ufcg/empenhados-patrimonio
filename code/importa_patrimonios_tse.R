@@ -22,7 +22,7 @@ dados_tse = tibble(estado = estados) %>%
            grepl("ELEITO|SUPLENTE", resultado_1), 
            grepl("ELEITO|SUPLENTE", resultado_2))  # participou em 2012 e 2016
 
-dados_tse %>% 
+  dados_tse %>% 
     filter(grepl("PREFEITO", cargo_pleiteado_2)) %>% 
     distinct() %>% 
     write_csv(here("data/ganhos_prefeitos_br.csv"))
