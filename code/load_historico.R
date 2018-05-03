@@ -18,7 +18,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
     candidatos_2 <- importCandidatos(arquivo_candidatos_2, ano_eleicao2)
 
     atuais_eleitos <- candidatos_2 %>%
-        filter(codCargo %in% cod_cargo, codSituacaoEleito %in% c(1, 2, 3)) %>%
+        filter(codCargo %in% cod_cargo, codSituacaoEleito != -1, !grepl("SUPLEMENTAR", descEleicao)) %>% # remove #NULO e eleições suplementares
         select(
             sequencialCandidato2 = sequencialCandidato,
             siglaUnidEleitoral,
@@ -31,11 +31,12 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
             cpfCandidato,
             descSituacaoEleito
         )
-
-    
+    print(candidatos_2 %>% filter(!grepl("SUPLEMENTAR", descEleicao)) %>% nrow())
+    print(candidatos_1 %>% filter(!grepl("SUPLEMENTAR", descEleicao)) %>% nrow()
     historico_atuais_eleitos <- atuais_eleitos %>%
         left_join(
             candidatos_1 %>%
+              filter(codSituacaoEleito != -1, !grepl("SUPLEMENTAR", descEleicao)) %>%
                 select(
                     sequencialCandidato1 = sequencialCandidato,
                     cpfCandidato,
@@ -53,17 +54,13 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
                 by = c("sequencialCandidato1" = "sequencialCandidato")) %>% 
       group_by(sequencialCandidato1) %>% 
       summarise(totalBens1 = sum(valorBem)) 
-    #%>%
-     # mutate(totalBens1 = ifelse(is.na(totalBens1), 0, totalBens1))
-    
+
     declaracao_atuais_eleitos2 <- historico_atuais_eleitos %>% 
       select(sequencialCandidato2) %>% 
       left_join(declaracao_2 %>% select(sequencialCandidato, valorBem),
                 by = c("sequencialCandidato2" = "sequencialCandidato")) %>% 
       group_by(sequencialCandidato2) %>% 
       summarise(totalBens2 = sum(valorBem)) 
-    #%>%
-    # mutate(totalBens2 = ifelse(is.na(totalBens2), 0, totalBens2))
     
     historico_bens_atuais_eleitos <- historico_atuais_eleitos %>% 
       left_join(declaracao_atuais_eleitos1, by = "sequencialCandidato1") %>% 
