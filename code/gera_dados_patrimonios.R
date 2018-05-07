@@ -28,9 +28,7 @@ dados_tse_2014 <- tibble(estado = estados) %>%
     ano_eleicao2 = 2014
   )) %>% 
   unnest(dados) %>% 
-  filter(!is.na(resultado_1), 
-         grepl("ELEITO|SUPLENTE", resultado_1), 
-         grepl("ELEITO|SUPLENTE", resultado_2)) %>%
+  filter(!is.na(resultado_1)) %>%
   mutate(ano_um = 2010) %>%
   mutate(ano_dois = 2014)
 
@@ -43,9 +41,7 @@ dados_tse_2016 <- tibble(estado = estados) %>%
     ano_eleicao2 = 2016
   )) %>% 
   unnest(dados) %>% 
-  filter(!is.na(resultado_1), 
-         grepl("ELEITO|SUPLENTE", resultado_1), 
-         grepl("ELEITO|SUPLENTE", resultado_2))  %>%
+  filter(!is.na(resultado_1))  %>%
   mutate(ano_um = 2012) %>%
   mutate(ano_dois = 2016)
 

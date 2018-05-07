@@ -31,8 +31,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
             cpfCandidato,
             descSituacaoEleito
         )
-    print(candidatos_2 %>% filter(!grepl("SUPLEMENTAR", descEleicao)) %>% nrow())
-    print(candidatos_1 %>% filter(!grepl("SUPLEMENTAR", descEleicao)) %>% nrow()
+
     historico_atuais_eleitos <- atuais_eleitos %>%
         left_join(
             candidatos_1 %>%
