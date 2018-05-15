@@ -1,4 +1,5 @@
-
+library(here)
+library(tidyverse)
 source(here("code/load_historico.R"))
 
 # Depois de descompactar consulta_cand_2016.zip e bem_candidato_2012.zip 
@@ -44,7 +45,3 @@ dados_tse_2016 <- tibble(estado = estados) %>%
   filter(!is.na(resultado_1))  %>%
   mutate(ano_um = 2012) %>%
   mutate(ano_dois = 2016)
-
-dados_all <- dados_tse_2012 %>% rbind(dados_tse_2014) %>% rbind(dados_tse_2016)
-
-dados_all %>% write.csv(here("data/patrimonio_candidados_v2.csv"), fileEncoding = "latin1", row.names = FALSE)
