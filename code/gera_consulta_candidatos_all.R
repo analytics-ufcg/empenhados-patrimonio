@@ -18,7 +18,7 @@ gera_consulta_candidados_all <- function(){
                       ".txt")) %>% 
       return()
   }
-  
+
   estados = c("AC" , "AL" , "AM" , "AP" , "BA" , "CE" , "ES" , "GO" , "MA" , "MG" , "MS" , "MT" , "PA" , "PB" , "PE" , "PI" , "PR" , "RJ" , "RN" , "RO" , "RR" , "RS" , "SC" , "SE" , "SP" , "TO")
   
   consulta_candidatos_all <- data_frame()
@@ -39,47 +39,6 @@ gera_consulta_candidados_all <- function(){
 
 consulta_candidatos_all <- gera_consulta_candidados_all()
 
-
-define_situacao_eleito <- function(descSituacaoEleito) {
-  
-  situacao_um_eleito <- function(descSituacaoEleito) {
-    eleito <- c("ELEITO", "ELEITO POR QP", "ELEITO POR MÉDIA", "MÉDIA")
-    
-    nao_eleito <- c("RENÚNCIA/FALECIMENTO/CASSAÇÃO ANTES DA ELEIÇÃO", "NÃO ELEITO",
-                    "RENÚNCIA/FALECIMENTO/CASSAÇÃO APÓS A ELEIÇÃO", "REGISTRO NEGADO ANTES DA ELEIÇÃO",
-                    "REGISTRO NEGADO APÓS A ELEIÇÃO", "SUBSTITUÍDO", "INDEFERIDO COM RECURSO", "CASSADO COM RECURSO")
-    
-    # suplente <- c("SUPLENTE")
-    # segundo_turno <- c("2º TURNO")
-    # indefinido <- c("#NE#", "#NULO#", NA)
-    
-    if (is.na(descSituacaoEleito)) {
-      situacao = "INDEFINIDO"
-    } else if (descSituacaoEleito %in% eleito) {
-      situacao = "ELEITO"
-    } else if (descSituacaoEleito %in% nao_eleito) {
-      situacao = "NÃO ELEITO"
-    } else if (descSituacaoEleito == "2º TURNO") {
-      situacao = "2º TURNO"
-    } else if (descSituacaoEleito == "SUPLENTE") {
-      situacao = "SUPLENTE"
-    } else {
-      situacao = "INDEFINIDO"
-    }
-    
-    return(situacao)
-  }
-  
-  situacao = c()
-  for (i in 1:length(descSituacaoEleito)) {
-    situacao[i] <- situacao_um_eleito(descSituacaoEleito[i])
-  }
-  
-  return(situacao)
-  
-}
-
-# define_situacao_candidatura <- function()
 apto <- c(2, 4, 8, 16, 17, 18, 19)
 inapto <- c(5, 6, 7, 9, 10, 11, 13, 14)
 
@@ -93,6 +52,17 @@ patroniza_descSituacaoCandidatura <- function(codSituacaoCandidatura) {
     descricao[i] <- define_descSituacaoCandidatura(codSituacaoCandidatura[i])
   }
 }
+
+
+
+apto <- c(2, 4, 8, 16, 17, 18, 19)
+inapto <- c(5, 6, 7, 9, 10, 11, 13, 14)
+
+eleito <- c("ELEITO", "ELEITO POR QP", "ELEITO POR MÉDIA", "MÉDIA")
+
+nao_eleito <- c("RENÚNCIA/FALECIMENTO/CASSAÇÃO ANTES DA ELEIÇÃO", "NÃO ELEITO",
+                "RENÚNCIA/FALECIMENTO/CASSAÇÃO APÓS A ELEIÇÃO", "REGISTRO NEGADO ANTES DA ELEIÇÃO",
+                "REGISTRO NEGADO APÓS A ELEIÇÃO", "SUBSTITUÍDO", "INDEFERIDO COM RECURSO", "CASSADO COM RECURSO")
 
 consulta_candidatos_all <- consulta_candidatos_all %>%
   mutate(codSituacaoCandidatura = ifelse(is.na(codSituacaoCandidatura), descSituacaoCandidatura, codSituacaoCandidatura)) %>%
@@ -114,18 +84,33 @@ consulta_candidatos_all <- consulta_candidatos_all %>%
     codSituacaoCandidatura == 19 ~ "CANCELADO COM RECURSO",
     is.na(codSituacaoCandidatura) ~ "#NE#",
     TRUE ~ codSituacaoCandidatura
+  )) %>%
+  mutate(classeSituacaoCandidatura = case_when(
+    codSituacaoCandidatura %in% apto ~ "APTO",
+    codSituacaoCandidatura %in% inapto ~ "INAPTO",
+    TRUE ~ "INDEFINIDO"
+    
+  )) %>%
+  mutate(classeSituacaoEleicao = case_when(
+    is.na(descSituacaoEleito) ~ "INDEFINIDO",
+    descSituacaoEleito %in% eleito ~ "ELEITO",
+    descSituacaoEleito %in% nao_eleito ~ "NÃO ELEITO",
+    descSituacaoEleito == "2º TURNO" ~ "2º TURNO",
+    descSituacaoEleito == "SUPLENTE" ~ "SUPLENTE",
+    TRUE ~ "INDEFINIDO"
   ))
-  mutate(classeSituacaoEleicao = define_situacao_eleito(descSituacaoEleito))
 
-consulta_candidatos_all %>% group_by(situacaoTotalizacaoEleicao) %>% summarise(n())
+
+consulta_candidatos_all %>% filter(descSituacaoEleito == 2) %>% View()
+
+unique(consulta_candidatos_all$descSituacaoEleito)
 
 consulta_candidatos_all %>% 
   group_by(codSituacaoCandidatura, descSituacaoCandidatura) %>%
   summarise(n())
 
 consulta_candidatos_all %>% 
-  group_by(codSituacaoEleito, descSituacaoEleito) %>%
-  summarise(n()) %>%
+  filter(is.na(codSituacaoEleito)) %>%
   View()
 
 consulta_candidatos_all %>% 
