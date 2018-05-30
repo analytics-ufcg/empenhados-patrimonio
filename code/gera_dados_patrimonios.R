@@ -45,3 +45,9 @@ dados_tse_2016 <- tibble(estado = estados) %>%
   filter(!is.na(resultado_1))  %>%
   mutate(ano_um = 2012) %>%
   mutate(ano_dois = 2016)
+
+
+dados_tse_all <- dados_tse_2012 %>%
+  rbind(dados_tse_2014) %>%
+  rbind(dados_tse_2016)
+

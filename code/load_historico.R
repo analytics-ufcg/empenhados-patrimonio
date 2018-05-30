@@ -10,12 +10,66 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
     library(dplyr)
     library(stringr)
     source(here::here("code/import_tse_utils.R"))
+  
+    determina_situacao <- function(data_candidatos) {
+      
+      apto <- c(2, 4, 8, 16, 17, 18, 19)
+      inapto <- c(5, 6, 7, 9, 10, 11, 13, 14)
+      
+      eleito <- c("ELEITO", "ELEITO POR QP", "ELEITO POR MÉDIA", "MÉDIA")
+      
+      nao_eleito <- c("RENÚNCIA/FALECIMENTO/CASSAÇÃO ANTES DA ELEIÇÃO", "NÃO ELEITO",
+                      "RENÚNCIA/FALECIMENTO/CASSAÇÃO APÓS A ELEIÇÃO", "REGISTRO NEGADO ANTES DA ELEIÇÃO",
+                      "REGISTRO NEGADO APÓS A ELEIÇÃO", "SUBSTITUÍDO", "INDEFERIDO COM RECURSO", "CASSADO COM RECURSO")
+      
+      data <- data_candidatos %>%
+        mutate(codSituacaoCandidatura = ifelse(is.na(codSituacaoCandidatura), descSituacaoCandidatura, codSituacaoCandidatura)) %>%
+        mutate(descSituacaoCandidatura = case_when(
+          codSituacaoCandidatura == 2 ~ "DEFERIDO",
+          codSituacaoCandidatura == 4 ~ "INDEFERIDO COM RECURSO",
+          codSituacaoCandidatura == 5 ~ "CANCELADO",
+          codSituacaoCandidatura == 6 ~ "RENÚNCIA",
+          codSituacaoCandidatura == 7 ~ "FALECIDO",
+          codSituacaoCandidatura == 8 ~ "AGUARDANDO JULGAMENTO",
+          codSituacaoCandidatura == 9 ~ "INELEGÍVEL",
+          codSituacaoCandidatura == 10 ~ "CASSADO",
+          codSituacaoCandidatura == 11 ~ "IMPUGNADO",
+          codSituacaoCandidatura == 13 ~ "NÃO CONHECIMENTO DO PEDIDO",
+          codSituacaoCandidatura == 14 ~ "INDEFERIDO",
+          codSituacaoCandidatura == 16 ~ "DEFERIDO COM RECURSO",
+          codSituacaoCandidatura == 17 ~ "PENDENTE DE JULGAMENTO",
+          codSituacaoCandidatura == 18 ~ "CASSADO COM RECURSO",
+          codSituacaoCandidatura == 19 ~ "CANCELADO COM RECURSO",
+          is.na(codSituacaoCandidatura) ~ "#NE#",
+          TRUE ~ as.character(codSituacaoCandidatura)
+        )) %>%
+        mutate(classeSituacaoCandidatura = case_when(
+          codSituacaoCandidatura %in% apto ~ "APTO",
+          codSituacaoCandidatura %in% inapto ~ "INAPTO",
+          TRUE ~ "INDEFINIDO"
+          
+        )) %>%
+        mutate(classeSituacaoEleicao = case_when(
+          is.na(descSituacaoEleito) ~ "INDEFINIDO",
+          descSituacaoEleito %in% eleito ~ "ELEITO",
+          descSituacaoEleito %in% nao_eleito ~ "NÃO ELEITO",
+          descSituacaoEleito == "2º TURNO" ~ "2º TURNO",
+          descSituacaoEleito == "SUPLENTE" ~ "SUPLENTE",
+          TRUE ~ "INDEFINIDO"
+        ))
+    
+    return(data)
+  }
 
     declaracao_1 <- importDecalaracao(arquivo_bens_1)
-    candidatos_1 <- importCandidatos(arquivo_candidatos_1, ano_eleicao1)
+    candidatos_1 <- importCandidatos(arquivo_candidatos_1, ano_eleicao1) 
+    
+    candidatos_1 <- determina_situacao(candidatos_1)
 
     declaracao_2 <- importDecalaracao(arquivo_bens_2)
-    candidatos_2 <- importCandidatos(arquivo_candidatos_2, ano_eleicao2)
+    candidatos_2 <- importCandidatos(arquivo_candidatos_2, ano_eleicao2) 
+    
+    candidatos_2 <- determina_situacao(candidatos_2)
 
     atuais_eleitos <- candidatos_2 %>%
         filter(codCargo %in% cod_cargo, codSituacaoEleito != -1, !grepl("SUPLEMENTAR", descEleicao)) %>% # remove #NULO e eleições suplementares
@@ -29,7 +83,9 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
             codCargo,
             descCargo,
             cpfCandidato,
-            descSituacaoEleito
+            descSituacaoEleito,
+            situacaoCandidatura2  = classeSituacaoCandidatura,
+            situacaoEleicao2 = classeSituacaoEleicao
         )
 
     historico_atuais_eleitos <- atuais_eleitos %>%
@@ -42,7 +98,9 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
                     codCargo1 = codCargo,
                     descCargo1 = descCargo,
                     descSituacaoEleito1 = descSituacaoEleito,
-                    codSituacaoEleito1 = codSituacaoEleito
+                    codSituacaoEleito1 = codSituacaoEleito,
+                    situacaoCandidatura1  = classeSituacaoCandidatura,
+                    situacaoEleicao1 = classeSituacaoEleicao
                 ),
             by = c("cpfCandidato")
         )
@@ -174,6 +232,10 @@ patrimonios_tidy <- function(historico, ano_eleicao1, ano_eleicao2){
             patrimonio_eleicao_2 = totalBens2,
             sigla_partido = siglaPartido,
             cargo_pleiteado_1 = descCargo1,
+            situacaoCandidatura1,
+            situacaoCandidatura2,
+            situacaoEleicao1,
+            situacaoEleicao2,
             resultado_1 = descSituacaoEleito1,
             cargo_pleiteado_2 = descCargo,
             resultado_2 = descSituacaoEleito,

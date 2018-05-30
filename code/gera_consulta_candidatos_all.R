@@ -36,24 +36,7 @@ gera_consulta_candidados_all <- function(){
   
 }
 
-
 consulta_candidatos_all <- gera_consulta_candidados_all()
-
-apto <- c(2, 4, 8, 16, 17, 18, 19)
-inapto <- c(5, 6, 7, 9, 10, 11, 13, 14)
-
-patroniza_descSituacaoCandidatura <- function(codSituacaoCandidatura) {
-  define_descSituacaoCandidatura <- function(codigo) {
-    
-  }
-  
-  descricao = c()
-  for (i in 1:length(codSituacaoCandidatura)){
-    descricao[i] <- define_descSituacaoCandidatura(codSituacaoCandidatura[i])
-  }
-}
-
-
 
 apto <- c(2, 4, 8, 16, 17, 18, 19)
 inapto <- c(5, 6, 7, 9, 10, 11, 13, 14)
@@ -123,8 +106,3 @@ cod_desc_situacaoCandidatura <- consulta_candidatos_all %>%
   filter(!is.na(codSituacaoCandidatura)) %>%
   group_by(codSituacaoCandidatura, descSituacaoCandidatura) %>%
   summarise(n())
-
-
-apto <- c(2, 4, 8, 16, 17, 18, 19)
-inapto <- c(5, 6, 7, 9, 10, 11, 13, 14)
-
