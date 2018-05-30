@@ -232,14 +232,15 @@ patrimonios_tidy <- function(historico, ano_eleicao1, ano_eleicao2){
             patrimonio_eleicao_2 = totalBens2,
             sigla_partido = siglaPartido,
             cargo_pleiteado_1 = descCargo1,
+            resultado_1 = descSituacaoEleito1,
+            cargo_pleiteado_2 = descCargo,
+            resultado_2 = descSituacaoEleito,
             situacaoCandidatura1,
             situacaoCandidatura2,
             situacaoEleicao1,
             situacaoEleicao2,
-            resultado_1 = descSituacaoEleito1,
-            cargo_pleiteado_2 = descCargo,
-            resultado_2 = descSituacaoEleito,
             cpf = cpfCandidato,
             nome_completo = nomeCandidato
         ) 
 }
+

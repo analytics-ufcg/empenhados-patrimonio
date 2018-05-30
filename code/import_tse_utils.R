@@ -1,8 +1,6 @@
 library(readr)
 library(dplyr)
 
-library(readr)
-library(dplyr)
 
 importDecalaracao <- function(dataPath) {
     declaracao <- read_delim(dataPath, delim = ";", col_names = FALSE, col_types = "cciccciccncc",
