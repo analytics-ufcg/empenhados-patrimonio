@@ -43,7 +43,7 @@ inapto <- c(5, 6, 7, 9, 10, 11, 13, 14)
 
 eleito <- c("ELEITO", "ELEITO POR QP", "ELEITO POR MÉDIA", "MÉDIA")
 
-nao_eleito <- c("RENÚNCIA/FALECIMENTO/CASSAÇÃO ANTES DA ELEIÇÃO", "NÃO ELEITO",
+nao_eleito <- c("SUPLENTE", "RENÚNCIA/FALECIMENTO/CASSAÇÃO ANTES DA ELEIÇÃO", "NÃO ELEITO",
                 "RENÚNCIA/FALECIMENTO/CASSAÇÃO APÓS A ELEIÇÃO", "REGISTRO NEGADO ANTES DA ELEIÇÃO",
                 "REGISTRO NEGADO APÓS A ELEIÇÃO", "SUBSTITUÍDO", "INDEFERIDO COM RECURSO", "CASSADO COM RECURSO")
 
@@ -79,7 +79,6 @@ consulta_candidatos_all <- consulta_candidatos_all %>%
     descSituacaoEleito %in% eleito ~ "ELEITO",
     descSituacaoEleito %in% nao_eleito ~ "NÃO ELEITO",
     descSituacaoEleito == "2º TURNO" ~ "2º TURNO",
-    descSituacaoEleito == "SUPLENTE" ~ "SUPLENTE",
     TRUE ~ "INDEFINIDO"
   ))
 
@@ -106,3 +105,6 @@ cod_desc_situacaoCandidatura <- consulta_candidatos_all %>%
   filter(!is.na(codSituacaoCandidatura)) %>%
   group_by(codSituacaoCandidatura, descSituacaoCandidatura) %>%
   summarise(n())
+
+consulta_candidatos_all %>%
+  write_csv(here("data/candidatos.csv"))
