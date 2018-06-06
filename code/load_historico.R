@@ -18,7 +18,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
       
       eleito <- c("ELEITO", "ELEITO POR QP", "ELEITO POR MÉDIA", "MÉDIA")
       
-      nao_eleito <- c("RENÚNCIA/FALECIMENTO/CASSAÇÃO ANTES DA ELEIÇÃO", "NÃO ELEITO",
+      nao_eleito <- c("SUPLENTE", "RENÚNCIA/FALECIMENTO/CASSAÇÃO ANTES DA ELEIÇÃO", "NÃO ELEITO",
                       "RENÚNCIA/FALECIMENTO/CASSAÇÃO APÓS A ELEIÇÃO", "REGISTRO NEGADO ANTES DA ELEIÇÃO",
                       "REGISTRO NEGADO APÓS A ELEIÇÃO", "SUBSTITUÍDO", "INDEFERIDO COM RECURSO", "CASSADO COM RECURSO")
       
@@ -54,7 +54,6 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
           descSituacaoEleito %in% eleito ~ "ELEITO",
           descSituacaoEleito %in% nao_eleito ~ "NÃO ELEITO",
           descSituacaoEleito == "2º TURNO" ~ "2º TURNO",
-          descSituacaoEleito == "SUPLENTE" ~ "SUPLENTE",
           TRUE ~ "INDEFINIDO"
         ))
     
@@ -122,10 +121,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
     historico_bens_atuais_eleitos <- historico_atuais_eleitos %>% 
       left_join(declaracao_atuais_eleitos1, by = "sequencialCandidato1") %>% 
       left_join(declaracao_atuais_eleitos2, "sequencialCandidato2") %>% 
-      filter(codSituacaoEleito1 != 6 | is.na(codSituacaoEleito1)) %>%
-      filter(!(cpfCandidato == "34303197491" & codSituacaoEleito1 == -1))
-    # Caso particular de JOSE FERNANDES GORGONHO NETO em 2012 (foi candidato a prefeito em 2012 mas teve sua campanha renunciada)
-    # Foi removido as ocorrências de segundo turno também
+      filter(codSituacaoEleito1 != 6 | is.na(codSituacaoEleito1))
 
     historico_bens_atuais_eleitos %>% 
         mutate_at(c("nomeUrnaCandidato", "descUnidEleitoral"), str_to_title) %>% 
