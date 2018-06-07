@@ -3,7 +3,7 @@ library(here)
 
 candidatos <- read.csv(here("data/candidatos.csv"), stringsAsFactors = FALSE)
 
-## UNIDADE ELEITORAL
+# UNIDADE ELEITORAL
 cod_unidade_eleitoral <- candidatos %>%
   select(siglaUnidEleitoral, descUnidEleitoral) %>%
   distinct(siglaUnidEleitoral, .keep_all = TRUE) %>%
@@ -116,16 +116,16 @@ candidatos_alt <- candidatos_alt %>%
 
 ## GERANDO CSV's
 
-write.csv(candidatos_alt, here("data/candidatos_eleicao.csv"))
+write.csv(candidatos_alt, here("data/candidatos_eleicao.csv"), row.names = FALSE)
 
-write.csv(cod_unidade_eleitoral, here("data/cod_unidade_eleitoral.csv"))
-write.csv(cod_cargo, here("data/cod_cargo.csv"))
-write.csv(cod_situacao_candidatura, here("data/cod_situacao_candidatura.csv"))
-write.csv(cod_partido, here("data/cod_partido.csv"))
-write.csv(cod_ocupacao, here("data/cod_ocupacao.csv"))
-write.csv(cod_sexo, here("data/cod_sexo.csv"))
-write.csv(cod_grau_instrucao, here("data/cod_grau_instrucao.csv"))
-write.csv(cod_estado_civil, here("data/cod_estado_civil.csv"))
-write.csv(cod_cor_raca, here("data/cod_cor_raca.csv"))
-write.csv(cod_nacionalidade, here("data/cod_nacionalidade.csv"))
-write.csv(cod_situacao_eleito, here("data/cod_situacao_eleito.csv"))
+write.csv(cod_unidade_eleitoral, here("data/cod_unidade_eleitoral.csv"), row.names = FALSE)
+write.csv(cod_cargo, here("data/cod_cargo.csv"), row.names = FALSE)
+write.csv(cod_situacao_candidatura, here("data/cod_situacao_candidatura.csv"), row.names = FALSE)
+write.csv(cod_partido, here("data/cod_partido.csv"), row.names = FALSE)
+write.csv(cod_ocupacao, here("data/cod_ocupacao.csv"), row.names = FALSE)
+write.csv(cod_sexo, here("data/cod_sexo.csv"), row.names = FALSE)
+write.csv(cod_grau_instrucao, here("data/cod_grau_instrucao.csv"), row.names = FALSE)
+write.csv(cod_estado_civil, here("data/cod_estado_civil.csv"), row.names = FALSE)
+write.csv(cod_cor_raca, here("data/cod_cor_raca.csv"), row.names = FALSE)
+write.csv(cod_nacionalidade, here("data/cod_nacionalidade.csv"), row.names = FALSE)
+write.csv(cod_situacao_eleito, here("data/cod_situacao_eleito.csv"), row.names = FALSE)
