@@ -108,3 +108,5 @@ cod_desc_situacaoCandidatura <- consulta_candidatos_all %>%
 
 consulta_candidatos_all %>%
   write_csv(here("data/candidatos.csv"))
+
+write.csv(consulta_candidatos_all, here("data/candidatos.csv"), row.names = FALSE)
