@@ -53,4 +53,4 @@ dados_tse_all <- dados_tse_2012 %>%
   rbind(dados_tse_2016)
 
 dados_tse_all %>%
-  write_csv(here("data/patrimorio_candidados.csv"))
+  write_csv(here("data/patrimonio_candidatos.csv"))
