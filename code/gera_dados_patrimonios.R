@@ -17,7 +17,7 @@ dados_tse_2012 <- tibble(estado = estados) %>%
     ano_eleicao2 = 2012
   )) %>% 
   unnest(dados) %>% 
-  filter(!is.na(resultado_1)) %>%-
+  filter(!is.na(resultado_1)) %>%
   mutate(ano_um = 2008) %>%
   mutate(ano_dois = 2012)
 

@@ -1,6 +1,7 @@
 library(tidyverse)
 library(here)
 
+## Depois de executar o script gera_consulta_candidatos_all.R e gerar o csv com os dados dos candidatos
 candidatos <- read.csv(here("data/candidatos.csv"), stringsAsFactors = FALSE)
 
 # UNIDADE ELEITORAL
