@@ -121,7 +121,10 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
     historico_bens_atuais_eleitos <- historico_atuais_eleitos %>% 
       left_join(declaracao_atuais_eleitos1, by = "sequencialCandidato1") %>% 
       left_join(declaracao_atuais_eleitos2, "sequencialCandidato2") %>% 
-      filter(codSituacaoEleito1 != 6 | is.na(codSituacaoEleito1))
+      filter(codSituacaoEleito1 != 6 | is.na(codSituacaoEleito1)) %>%
+      filter(!(cpfCandidato == "34303197491" & codSituacaoEleito1 == -1))
+    # Caso particular de JOSE FERNANDES GORGONHO NETO em 2012 (foi candidato a prefeito em 2012 mas teve sua campanha renunciada)
+    # Foi removido as ocorrências de segundo turno também
 
     historico_bens_atuais_eleitos %>% 
         mutate_at(c("nomeUrnaCandidato", "descUnidEleitoral"), str_to_title) %>% 

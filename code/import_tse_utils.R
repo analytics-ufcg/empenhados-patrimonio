@@ -53,8 +53,31 @@ importCandidatos2008 <- function(dataPath){
     return(candidatos_2008)
 }
 
-importCandidatos2010 <- function(dataPath) {
-    return(importCandidatos2008(dataPath))
+importCandidatos2010 <- function(dataPath){
+  candidatos_2010 <- read_delim(dataPath, delim = ";", col_names = FALSE, 
+                                col_types = "cciicccciccciccicicccccciccciicicicicccciic",
+                                locale = locale(encoding = "latin1"))
+  
+  colunas_candidatos <- c("dataGeracao", "horaGeracao", "anoEleicao", "numTurno", "descEleicao",  "siglaUF", 
+                          "siglaUnidEleitoral", "descUnidEleitoral", "codCargo", "descCargo", "nomeCandidato", "sequencialCandidato", 
+                          "numeroCandidato", "cpfCandidato","nomeUrnaCandidato", "codSituacaoCandidatura", "descSituacaoCandidatura", 
+                          "numeroPartido", "siglaPartido", "nomePartido", "codLegenda", "siglaLegenda", 
+                          "composicaoLegenda", "nomeLegenda", "codOcupacao", "descOcupacao", "dataNascimento", 
+                          "numTituloEleitoralCand", "idadeCandDataEleicao", "codSexo", "descSexo", 
+                          "codGrauInstrucao", "descGrauInstrucao", "codEstadoCivil", "descEstadoCivil", 
+                          "codNacionalidade", "descNacionalidade", "siglaUFNasc", "codMunicipioNasc", 
+                          "nomeMunicipioNasc", "despesaMaxCampanha", "codSituacaoEleito", "descSituacaoEleito")
+  
+  
+  colnames(candidatos_2010) <- colunas_candidatos
+  
+  candidatos_2010 <- candidatos_2010 %>%
+    mutate(email = "#NE") %>%
+    mutate(codCorRaca = -3) %>%
+    mutate(descCorRaca = "#NE") %>%
+    select(colunas_candidatos[1:35], "codCorRaca", "descCorRaca", colunas_candidatos[36:43], "email")
+  
+  return(candidatos_2010)
 }
 
 importCandidatos2012 <- function(dataPath){
