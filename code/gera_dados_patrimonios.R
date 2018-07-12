@@ -32,8 +32,16 @@ dados_tse_2014 <- tibble(estado = estados_df_br) %>%
   unnest(dados) %>% 
   filter(!is.na(resultado_1)) %>%
   mutate(ano_um = 2010) %>%
-  mutate(ano_dois = 2014)
-
+  mutate(ano_dois = 2014) %>%
+    left_join(estados_df, by=c('cd_unidade_eleitoral_1' = 'Sigla')) %>%
+    select(-Estado) %>%
+    left_join(estados_df, by=c('cd_unidade_eleitoral_2' = 'Sigla')) %>%
+    select(-Estado)
+  
+dados_tse_2014$cd_unidade_eleitoral_1 <- dados_tse_2014$Código.x
+dados_tse_2014$cd_unidade_eleitoral_2 <- dados_tse_2014$Código.y
+dados_tse_2014 <- dados_tse_2014 %>% select(-c(Código.x, Código.y))
+  
 dados_tse_2016 <- tibble(estado = estados) %>%
   mutate(dados = map(
     estado,

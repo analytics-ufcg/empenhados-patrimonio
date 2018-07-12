@@ -74,7 +74,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
         filter(codCargo %in% cod_cargo, codSituacaoEleito != -1, !grepl("SUPLEMENTAR", descEleicao)) %>% # remove #NULO e eleições suplementares
         select(
             sequencialCandidato2 = sequencialCandidato,
-            siglaUnidEleitoral,
+            siglaUnidEleitoral2 = siglaUnidEleitoral,
             descUnidEleitoral,
             nomeCandidato,
             nomeUrnaCandidato,
@@ -93,6 +93,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
               filter(codSituacaoEleito != -1, !grepl("SUPLEMENTAR", descEleicao)) %>%
                 select(
                     sequencialCandidato1 = sequencialCandidato,
+                    siglaUnidEleitoral1 = siglaUnidEleitoral,
                     cpfCandidato,
                     codCargo1 = codCargo,
                     descCargo1 = descCargo,
@@ -173,6 +174,8 @@ patrimonios_em_wide <- function(historico){
         mutate(ganho = totalBens2 - totalBens1, 
                ganho_relativo = totalBens2 / totalBens1) %>% 
         select(
+            sequencialCandidato1,
+            sequencialCandidato2,
             cpfCandidato,
             nomeCandidato,
             ano_eleicao1 = totalBens1,
@@ -181,6 +184,7 @@ patrimonios_em_wide <- function(historico){
             ganho_relativo,
             nomeUrnaCandidato,
             siglaPartido,
+            siglaUnidEleitoral,
             descUnidEleitoral, 
             descCargo
         ) %>%
@@ -223,7 +227,11 @@ patrimonios_tidy <- function(historico, ano_eleicao1, ano_eleicao2){
             UF = "PB"
         ) %>% 
         select(
+            sequencial_candidato_1 = sequencialCandidato1,
+            sequencial_candidato_2 = sequencialCandidato2,
             nome_urna = nomeUrnaCandidato,
+            cd_unidade_eleitoral_1 = siglaUnidEleitoral1,
+            cd_unidade_eleitoral_2 = siglaUnidEleitoral2,
             unidade_eleitoral = descUnidEleitoral, 
             ganho,
             ganho_relativo,
