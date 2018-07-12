@@ -19,11 +19,19 @@ gera_consulta_candidados_all <- function(){
       return()
   }
 
-  estados = c("AC" , "AL" , "AM" , "AP" , "BA" , "CE" , "ES" , "GO" , "MA" , "MG" , "MS" , "MT" , "PA" , "PB" , "PE" , "PI" , "PR" , "RJ" , "RN" , "RO" , "RR" , "RS" , "SC" , "SE" , "SP" , "TO")
+  estados_mun = c("AC" , "AL" , "AM" , "AP" , "BA" , "CE" , "ES" , "GO" , "MA" , "MG" , "MS" , "MT" , "PA" , "PB" , "PE" , "PI" , "PR" , "RJ" , "RN" , "RO" , "RR" , "RS" , "SC" , "SE" , "SP" , "TO")
+  estados_df_br = c("AC" , "AL" , "AM" , "AP" , "BA" , "BR", "CE", "DF", "ES" , "GO" , "MA" , "MG" , "MS" , "MT" , "PA" , "PB" , "PE" , "PI" , "PR" , "RJ" , "RN" , "RO" , "RR" , "RS" , "SC" , "SE" , "SP" , "TO")
   
   consulta_candidatos_all <- data_frame()
   
   for (ano in c(2008, 2010, 2012, 2014, 2016)) {
+    
+    if (ano %in% c(2010, 2014)) {
+      estados = estados_df_br
+    } else {
+      estados = estados_mun
+    }
+    
     for(estado in estados) {
       message("Lendo dados: ", ano, ", ", estado)
       dataPath <- cria_nome_tse("candidato", ano, estado)
