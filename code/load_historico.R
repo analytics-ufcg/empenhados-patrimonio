@@ -71,7 +71,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
     candidatos_2 <- determina_situacao(candidatos_2)
 
     atuais_eleitos <- candidatos_2 %>%
-        filter(codCargo %in% cod_cargo, codSituacaoEleito != -1, !grepl("SUPLEMENTAR", descEleicao)) %>% # remove #NULO e eleições suplementares
+        filter(codCargo %in% cod_cargo, codSituacaoEleito != 6, codSituacaoEleito != -1, !grepl("SUPLEMENTAR", descEleicao)) %>% # remove #NULO e eleições suplementares
         select(
             sequencialCandidato2 = sequencialCandidato,
             siglaUnidEleitoral2 = siglaUnidEleitoral,
@@ -90,7 +90,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
     historico_atuais_eleitos <- atuais_eleitos %>%
         left_join(
             candidatos_1 %>%
-              filter(codSituacaoEleito != -1, !grepl("SUPLEMENTAR", descEleicao)) %>%
+              filter(codSituacaoEleito != -1, codSituacaoEleito != 6, !grepl("SUPLEMENTAR", descEleicao)) %>%
                 select(
                     sequencialCandidato1 = sequencialCandidato,
                     siglaUnidEleitoral1 = siglaUnidEleitoral,
@@ -113,15 +113,15 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
       summarise(totalBens1 = sum(valorBem)) 
 
     declaracao_atuais_eleitos2 <- historico_atuais_eleitos %>% 
-      select(sequencialCandidato2) %>% 
+      select(sequencialCandidato2, sequencialCandidato1) %>% 
       left_join(declaracao_2 %>% select(sequencialCandidato, valorBem),
                 by = c("sequencialCandidato2" = "sequencialCandidato")) %>% 
-      group_by(sequencialCandidato2) %>% 
+      group_by(sequencialCandidato2, sequencialCandidato1) %>% 
       summarise(totalBens2 = sum(valorBem)) 
     
     historico_bens_atuais_eleitos <- historico_atuais_eleitos %>% 
       left_join(declaracao_atuais_eleitos1, by = "sequencialCandidato1") %>% 
-      left_join(declaracao_atuais_eleitos2, "sequencialCandidato2") %>% 
+      left_join(declaracao_atuais_eleitos2, by = c("sequencialCandidato2", "sequencialCandidato1")) %>% 
       filter(codSituacaoEleito1 != 6 | is.na(codSituacaoEleito1)) %>%
       filter(!(cpfCandidato == "34303197491" & codSituacaoEleito1 == -1))
     # Caso particular de JOSE FERNANDES GORGONHO NETO em 2012 (foi candidato a prefeito em 2012 mas teve sua campanha renunciada)
