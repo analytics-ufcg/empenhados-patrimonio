@@ -1,9 +1,9 @@
 library(tidyverse)
 library(here)
 
-candidatos <- read.csv(here("eleicoes/candidatos_eleicao.csv"))
+candidatos <- read.csv(here("data/candidatos_eleicao.csv"))
 
-idh_municipios <- read.csv(here("AtlasBrasil_Consulta-IDH-Municipios.csv"), dec=",", stringsAsFactors = FALSE)
+idh_municipios <- read.csv(here("data/AtlasBrasil_Consulta.csv"), dec=",", stringsAsFactors = FALSE)
 
 estados <- idh_municipios %>% filter(Código < 100) %>% select(Código, Espacialidades)
 names(estados) <- c('Código', 'Estado')
@@ -14,7 +14,7 @@ idh_municipios <- idh_municipios %>%
   left_join(estados, by=c('estadoCod' = 'Código'))
 
 
-unidade_eleitoral <- read.csv(here("eleicoes/cod_unidade_eleitoral.csv"), stringsAsFactors = FALSE)
+unidade_eleitoral <- read.csv(here("data/cod_unidade_eleitoral.csv"), stringsAsFactors = FALSE)
 unidade_eleitoral <- unidade_eleitoral %>%
   left_join(candidatos %>% 
               group_by(siglaUnidEleitoral) %>%
@@ -72,10 +72,13 @@ idh_municipios <- idh_municipios %>%
 idh_municipios$desc_Unid_Eleitoral_lower <- tolower(iconv(idh_municipios$Espacialidades, from="UTF-8", to="ASCII//TRANSLIT"))
 unidade_eleitoral$desc_Unid_Eleitoral_lower <- tolower(iconv(unidade_eleitoral$descUnidEleitoral, to="ASCII//TRANSLIT"))
 
-unidade_eleitoral_estados <- unidade_eleitoral %>% filter(siglaUnidEleitoral %in% estados$Sigla)
-unidade_eleitoral_municipios <-  unidade_eleitoral %>% filter(!siglaUnidEleitoral %in% estados$Sigla)
 
-unidade_eleitoral <- unidade_eleitoral %>% right_join(idh_municipios, by=c('siglaUF' = 'Sigla', 'desc_Unid_Eleitoral_lower' = 'desc_Unid_Eleitoral_lower'))
+unidade_eleitoral <- unidade_eleitoral %>% right_join(idh_municipios, by=c('siglaUF' = 'Sigla', 'desc_Unid_Eleitoral_lower' = 'desc_Unid_Eleitoral_lower')) %>%
+  # Remove join errado nos casos em que uma cidade tem o mesmo nome que o estado
+  filter(!(nchar(siglaUnidEleitoral) == 2 & nchar(Código) != 2), !(nchar(siglaUnidEleitoral) > 2 & nchar(Código) == 2))
+
+
+to_solve <- unidade_eleitoral_1 %>% group_by(siglaUnidEleitoral) %>% summarise(n = n()) %>% filter(n > 1)
 
 to_fix <- unidade_eleitoral %>% filter(is.na(Código), !descUnidEleitoral %in% 
                                          # Cidades criadas após o censo
@@ -83,12 +86,11 @@ to_fix <- unidade_eleitoral %>% filter(is.na(Código), !descUnidEleitoral %in%
 
 idh_geral <- unidade_eleitoral %>%
   select(Código, siglaUnidEleitoral, Espacialidades, estadoCod, Estado, siglaUF, 
-         IDHM.2010, IDHM.Renda.2010, IDHM.Longevidade.2010, IDHM.Educação.2010) %>%
-  mutate(siglaUnidEleitoral = as.numeric(siglaUnidEleitoral)) %>%
-  mutate(siglaUnidEleitoral = ifelse(is.na(siglaUnidEleitoral), Código, siglaUnidEleitoral)) %>%
-  arrange(siglaUnidEleitoral)
+         IDHM.2010, IDHM.Renda.2010, IDHM.Longevidade.2010, IDHM.Educação.2010)
+
 
 idh_geral$Código <- as.character(idh_geral$Código)
 idh_geral$siglaUnidEleitoral <- as.character(idh_geral$siglaUnidEleitoral)
-write.csv(idh_geral, here("idh.csv"), row.names = FALSE)
+
+write.csv(idh_geral, here("data/idh.csv"), row.names = FALSE)
 
