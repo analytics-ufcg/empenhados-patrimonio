@@ -1,6 +1,6 @@
 # Os bens e os candidatos
 
-Análises do patrimônio declarado pelos candidatos ao TSE ao longo do tempo.
+Análises do patrimônio declarado pelos candidatos ao TSE ao longo do tempo. Este repositório contém o ETL e processamento dos dados para serem utilizados na aplicação web que está em https://github.com/analytics-ufcg/empenhados-patrimonio-app 
 
 ## Resultados
 
@@ -8,7 +8,7 @@ Relatórios nos notebooks em `reports/`. Dados derivados a partir dos do TSE em 
 
 ## Gerar nossos dados a partir daqueles do TSE 
 
-No linux/mac/ubuntu no windows: 
+No linux/mac/ubuntu ou no ubuntu dentro do windows: 
 
 ```
 cd data/
@@ -25,4 +25,4 @@ Rscript code/importa_patrimonios_tse.R
 # resultados em data/ganhos*csv
 ```
 
-No windows sem ubuntu ou outra distro linux: instale linux.
+No windows sem ubuntu, instale linux.
