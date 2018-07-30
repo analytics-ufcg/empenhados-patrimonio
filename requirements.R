@@ -4,5 +4,6 @@
 # Algumas dependências para o ubuntu:
 # * sudo apt-get install -y libgdal-dev libproj-dev
 
-pkgs <- c("rgdal", "gdalUtils", "dplyr", "readr", "htmlwidgets", "plotly", "DT", "stringr", "here", "leaflet", "ggrepel")
+pkgs <- c("rgdal", "gdalUtils", "dplyr", "readr", "htmlwidgets", "plotly", "DT", "stringr", "here", "leaflet", "ggrepel", "tidyverse")
 install.packages(pkgs, dependencies = TRUE, repos = "http://cran.rstudio.com/")
+  
