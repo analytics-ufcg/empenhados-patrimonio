@@ -60,16 +60,23 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
     return(data)
   }
 
-    declaracao_1 <- importDecalaracao(arquivo_bens_1)
+    declaracao_1 <- importDecalaracao(arquivo_bens_1, ano_eleicao1)
     candidatos_1 <- importCandidatos(arquivo_candidatos_1, ano_eleicao1) 
     
     candidatos_1 <- determina_situacao(candidatos_1)
 
-    declaracao_2 <- importDecalaracao(arquivo_bens_2)
+    declaracao_2 <- importDecalaracao(arquivo_bens_2, ano_eleicao2)
     candidatos_2 <- importCandidatos(arquivo_candidatos_2, ano_eleicao2) 
     
     candidatos_2 <- determina_situacao(candidatos_2)
-
+    
+    ## Caso especial para 2018, pois ainda não houve eleição. 
+    ## TODO: ATUALIZAR quando a eleição tiver sido apurada.
+    if (ano_eleicao2 == 2018) {
+        candidatos_2 <- candidatos_2 %>% 
+            mutate(codSituacaoEleito = 99)
+    }
+    
     atuais_eleitos <- candidatos_2 %>%
         filter(codCargo %in% cod_cargo, codSituacaoEleito != 6, codSituacaoEleito != -1, !grepl("SUPLEMENTAR", descEleicao)) %>% # remove #NULO e eleições suplementares
         select(
@@ -137,6 +144,11 @@ read_tse_uma_uf = function(estado, ano_eleicao1, ano_eleicao2, cod_cargo){
     #' já agregados. 
     message("Lendo dados: ", estado, ", ", ano_eleicao1, "-", ano_eleicao2)
     cria_nome_tse = function(tipo, ano, estado) {
+        extensao = ".txt"
+        if (ano == 2018) {
+            extensao = ".csv"
+        } 
+        
         prefix = ifelse(tipo == "bem", "bem_candidato_", "consulta_cand_")
         here::here(paste0("data/",
                           prefix,
@@ -146,7 +158,7 @@ read_tse_uma_uf = function(estado, ano_eleicao1, ano_eleicao2, cod_cargo){
                           ano,
                           "_",
                           estado,
-                          ".txt")) %>% 
+                          extensao)) %>% 
             return()
     }
     arquivo_bens_ano1 = cria_nome_tse("bem", ano_eleicao1, estado)

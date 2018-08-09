@@ -2,17 +2,36 @@ library(readr)
 library(dplyr)
 
 
-importDecalaracao <- function(dataPath) {
-    declaracao <- read_delim(dataPath, delim = ";", col_names = FALSE, col_types = "cciccciccncc",
-                                  locale = locale(encoding = "latin1")) 
+importDecalaracao <- function(dataPath, ano) {
+    if (ano == 2018) {
+        return(importDecalaracao2018(dataPath))
+    } else {
+        declaracao <- read_delim(dataPath, delim = ";", col_names = FALSE, col_types = "cciccciccncc",
+                                 locale = locale(encoding = "latin1")) 
+        
+        colunas_declaracao <- c("dataGeracao", "horaGeracao", "anoEleicao", "descEleicao", "siglaUF", 
+                                "sequencialCandidato", "codTipoBem", "descricaoTipoBem", 
+                                "detalheBem", "valorBem", "dataUltimaAtualizacao", "horaUltimaAtualizacao")
+        
+        colnames(declaracao) <- colunas_declaracao
+        
+        return(declaracao)
+    }
+}
+
+importDecalaracao2018 <- function(dataPath) {
+    declaracao_2018 <- read_delim(dataPath, delim = ";", col_names = TRUE, col_types = "cciccccciccncciic",
+                             locale = locale(encoding = "latin1"))
     
-    colunas_declaracao <- c("dataGeracao", "horaGeracao", "anoEleicao", "descEleicao", "siglaUF", 
-                            "sequencialCandidato", "codTipoBem", "descricaoTipoBem", 
-                            "detalheBem", "valorBem", "dataUltimaAtualizacao", "horaUltimaAtualizacao")
+    colunas_declaracao <- c("dataGeracao", "horaGeracao", "anoEleicao", "descEleicao", 
+                            "siglaUF", "siglaUE", "descUE", "sequencialCandidato", "codTipoBem", "descricaoTipoBem", 
+                            "detalheBem", "valorBem", "dataUltimaAtualizacao", "horaUltimaAtualizacao", "codEleicao",
+                            "numOrdemBem", "dataEleicao")
     
-    colnames(declaracao) <- colunas_declaracao
+    colnames(declaracao_2018) <- colunas_declaracao
     
-    return(declaracao)
+    return(declaracao_2018 %>% 
+               select(-c("siglaUE", "descUE", "codEleicao", "numOrdemBem", "dataEleicao")))
 }
 
 importCandidatos <- function(dataPath, ano) {
@@ -24,8 +43,10 @@ importCandidatos <- function(dataPath, ano) {
         return(importCandidatos2012(dataPath))
     } else if (ano == 2014) {
         return(importCandidatos2014(dataPath))
+    } else if (ano == 2016) {
+        return(importCandidatos2016(dataPath))    
     }
-    return(importCandidatos2016(dataPath))
+    return(importCandidatos2018(dataPath))
 }
 importCandidatos2008 <- function(dataPath){
     candidatos_2008 <- read_delim(dataPath, delim = ";", col_names = FALSE, 
@@ -121,4 +142,27 @@ importCandidatos2016 <- function(dataPath){
   colnames(candidatos_2016) <- colunas_candidatos
   return(candidatos_2016)
   
+}
+
+importCandidatos2018 <- function(dataPath){
+    candidatos_2018 <- read_delim(dataPath, delim = ";", col_names = TRUE,
+                                  locale = locale(encoding = "latin1"),
+                                  col_types = "cciicccciccccccicccccccciccciicicicicicciciiccciciiccccc")
+    
+    colunas_candidatos <- c("dataGeracao", "horaGeracao", "anoEleicao", "numTurno", "descEleicao", "SiglaUF", "siglaUnidEleitoral",
+                            "descUnidEleitoral", "codCargo", "descCargo", "nomeCandidato", "sequencialCandidato", "numeroCandidato",
+                            "cpfCandidato", "nomeUrnaCandidato", "codSituacaoCandidatura", "descSituacaocandidatura", "numeroPartido",
+                            "siglaPartido", "nomePartido", "codLegenda", "siglaLegenda", "composicaoLegenda", "nomeLegenda", "codOcupacao",
+                            "descOcupacao", "dataNascimento", "numTituloEleitoralCand", "idadeCandDataEleicao", "codSexo", "descSexo", 
+                            "codGrauInstrucao", "descGrauInstrucao", "codEstadoCivil", "descEstadoCivil", "codCorRaca", "descCorRaca",
+                            "codNacionalidade", "descNacionalidade", "siglaUFNasc", "codMunicipioNasc", "nomeMunicipioNasc", 
+                            "despesaMaxCampanha", "codSituacaoEleito", "descSituacaoEleito", "email", "dataEleicao", 
+                            "codSituacaoCandSuperior", "descSituacaoCandSuperior", "codEleicao", "codTipoEleicao", "descTipoEleicao", "situacaoReeleicao", 
+                            "tipoAbrangencia", "numProtocoloCandidatura", "numProcessoUnico")
+    
+    colnames(candidatos_2018) <- colunas_candidatos
+    return(candidatos_2018 %>% 
+               select(-c("dataEleicao", "codSituacaoCandSuperior", "descSituacaoCandSuperior", "codEleicao", "codTipoEleicao", 
+                         "descTipoEleicao", "situacaoReeleicao", "tipoAbrangencia", "numProtocoloCandidatura", 
+                         "numProcessoUnico")))
 }
