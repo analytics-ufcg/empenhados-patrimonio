@@ -149,9 +149,9 @@ importCandidatos2018 <- function(dataPath){
                                   locale = locale(encoding = "latin1"),
                                   col_types = "cciicccciccccccicccccccciccciicicicicicciciiccciciiccccc")
     
-    colunas_candidatos <- c("dataGeracao", "horaGeracao", "anoEleicao", "numTurno", "descEleicao", "SiglaUF", "siglaUnidEleitoral",
+    colunas_candidatos <- c("dataGeracao", "horaGeracao", "anoEleicao", "numTurno", "descEleicao", "siglaUF", "siglaUnidEleitoral",
                             "descUnidEleitoral", "codCargo", "descCargo", "nomeCandidato", "sequencialCandidato", "numeroCandidato",
-                            "cpfCandidato", "nomeUrnaCandidato", "codSituacaoCandidatura", "descSituacaocandidatura", "numeroPartido",
+                            "cpfCandidato", "nomeUrnaCandidato", "codSituacaoCandidatura", "descSituacaoCandidatura", "numeroPartido",
                             "siglaPartido", "nomePartido", "codLegenda", "siglaLegenda", "composicaoLegenda", "nomeLegenda", "codOcupacao",
                             "descOcupacao", "dataNascimento", "numTituloEleitoralCand", "idadeCandDataEleicao", "codSexo", "descSexo", 
                             "codGrauInstrucao", "descGrauInstrucao", "codEstadoCivil", "descEstadoCivil", "codCorRaca", "descCorRaca",

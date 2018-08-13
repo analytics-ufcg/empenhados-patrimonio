@@ -3,20 +3,30 @@ library(tidyverse)
 source(here("code/load_historico.R"))
 source(here("code/import_tse_utils.R"))
 
+# Use o script get_data.sh para baixar os dados
+# Descompacte todos os zips baixados 
+# Execute o script clean_data.sh para realizar limpeza nos 
+# Agora você pode executar o código abaixo
 
 gera_consulta_candidados_all <- function(){
+    
   cria_nome_tse = function(tipo, ano, estado) {
-    prefix = ifelse(tipo == "bem", "bem_candidato_", "consulta_cand_")
-    here::here(paste0("data/",
-                      prefix,
-                      ano,
-                      "/",
-                      prefix,
-                      ano,
-                      "_",
-                      estado,
-                      ".txt")) %>% 
-      return()
+      extensao = ".txt"
+      if (ano == 2018) {
+          extensao = ".csv"
+      } 
+      
+      prefix = ifelse(tipo == "bem", "bem_candidato_", "consulta_cand_")
+      here::here(paste0("data/",
+                        prefix,
+                        ano,
+                        "/",
+                        prefix,
+                        ano,
+                        "_",
+                        estado,
+                        extensao)) %>% 
+          return()
   }
 
   estados_mun = c("AC" , "AL" , "AM" , "AP" , "BA" , "CE" , "ES" , "GO" , "MA" , "MG" , "MS" , "MT" , "PA" , "PB" , "PE" , "PI" , "PR" , "RJ" , "RN" , "RO" , "RR" , "RS" , "SC" , "SE" , "SP" , "TO")
@@ -24,9 +34,9 @@ gera_consulta_candidados_all <- function(){
   
   consulta_candidatos_all <- data_frame()
   
-  for (ano in c(2008, 2010, 2012, 2014, 2016)) {
+  for (ano in c(2008, 2010, 2012, 2014, 2016, 2018)) {
     
-    if (ano %in% c(2010, 2014)) {
+    if (ano %in% c(2010, 2014, 2018)) {
       estados = estados_df_br
     } else {
       estados = estados_mun
@@ -113,8 +123,5 @@ cod_desc_situacaoCandidatura <- consulta_candidatos_all %>%
   filter(!is.na(codSituacaoCandidatura)) %>%
   group_by(codSituacaoCandidatura, descSituacaoCandidatura) %>%
   summarise(n())
-
-consulta_candidatos_all %>%
-  write_csv(here("data/candidatos.csv"))
 
 write.csv(consulta_candidatos_all, here("data/candidatos.csv"), row.names = FALSE)
