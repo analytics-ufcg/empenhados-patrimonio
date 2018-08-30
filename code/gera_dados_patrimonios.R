@@ -59,6 +59,7 @@ dados_tse_2018 <- tibble(estado = estados_df_br) %>%
     )) %>% 
     unnest(dados) %>% 
     filter(!is.na(resultado_1)) %>%
+    distinct(cpf, .keep_all = TRUE) %>% 
     mutate(ano_um = 2014) %>%
     mutate(ano_dois = 2018)
 

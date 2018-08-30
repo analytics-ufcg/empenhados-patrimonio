@@ -165,6 +165,24 @@ read_tse_uma_uf = function(estado, ano_eleicao1, ano_eleicao2, cod_cargo){
     arquivo_candidatos_ano1 = cria_nome_tse("candidato", ano_eleicao1, estado)
     arquivo_bens_ano2 = cria_nome_tse("bem", ano_eleicao2, estado)
     arquivo_candidatos_ano2 = cria_nome_tse("candidato", ano_eleicao2, estado)
+    
+    # dados_uf_presidente <- data.frame
+    # 
+    # ## Recupera dados considerando progressão de cargo do nível estadual para o federal
+    # if (ano_eleicao1 %% 4 == 2) {
+    #     arquivo_bens_ano1_federal = cria_nome_tse("bem", ano_eleicao1, estado)
+    #     arquivo_candidatos_ano1_federal = cria_nome_tse("candidato", ano_eleicao1, estado)
+    #     arquivo_bens_ano2_federal = cria_nome_tse("bem", ano_eleicao2, "BR")
+    #     arquivo_candidatos_ano2_federal = cria_nome_tse("candidato", ano_eleicao2, "BR")
+    #     
+    #     dados_uf_presidente <- read_historico_tse(arquivo_candidatos_ano1_federal,
+    #                                                 arquivo_candidatos_ano2_federal,
+    #                                                 arquivo_bens_ano1_federal,
+    #                                                 arquivo_bens_ano2_federal,
+    #                                                 cod_cargo = 1:13,
+    #                                                 ano_eleicao1 = ano_eleicao1,
+    #                                                 ano_eleicao2 = ano_eleicao2)
+    # }
 
     read_historico_tse(
         arquivo_candidatos_ano1, 
@@ -174,6 +192,7 @@ read_tse_uma_uf = function(estado, ano_eleicao1, ano_eleicao2, cod_cargo){
         cod_cargo = cod_cargo,
         ano_eleicao1 = ano_eleicao1,
         ano_eleicao2 = ano_eleicao2) %>% 
+        # rbind(dados_uf_presidente) %>% 
         patrimonios_tidy(ano_eleicao1 = ano_eleicao1, ano_eleicao2 = ano_eleicao2) %>% 
         return()
 }
