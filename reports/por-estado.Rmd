@@ -24,7 +24,6 @@ ganhos %>%
     xlim(-1e6, 1e6) + 
     theme_ridges() + 
     theme(legend.position = "None")
-
 ```
 
 ```{r}
