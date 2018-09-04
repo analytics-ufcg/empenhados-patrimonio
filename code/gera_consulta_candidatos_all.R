@@ -33,6 +33,7 @@ gera_consulta_candidados_all <- function(){
   estados_df_br = c("AC" , "AL" , "AM" , "AP" , "BA" , "BR", "CE", "DF", "ES" , "GO" , "MA" , "MG" , "MS" , "MT" , "PA" , "PB" , "PE" , "PI" , "PR" , "RJ" , "RN" , "RO" , "RR" , "RS" , "SC" , "SE" , "SP" , "TO")
   
   consulta_candidatos_all <- data_frame()
+  bens_candidatos_all <- data_frame()
   
   for (ano in c(2008, 2010, 2012, 2014, 2016, 2018)) {
     
@@ -44,17 +45,34 @@ gera_consulta_candidados_all <- function(){
     
     for(estado in estados) {
       message("Lendo dados: ", ano, ", ", estado)
+      message("Lendo candidaturas")
       dataPath <- cria_nome_tse("candidato", ano, estado)
+      
       consulta_candidatos_all <- consulta_candidatos_all %>%
         rbind(importCandidatos(dataPath, ano))
+      
+      message("Lendo Bens")
+      dataPath_bens <- cria_nome_tse("bem", ano, estado)
+      bens_candidatos_all <- bens_candidatos_all %>%
+        rbind(importDecalaracao(dataPath_bens, ano))
     }
   }
   
-  return(consulta_candidatos_all)
+  return(list(consulta_candidatos_all = consulta_candidatos_all, bens_candidatos_all = bens_candidatos_all))
   
 }
 
-consulta_candidatos_all <- gera_consulta_candidados_all()
+candidatos_all <- gera_consulta_candidados_all()
+
+consulta_candidatos_all <- candidatos_all$consulta_candidatos_all
+bens_candidatos_all <- candidatos_all$bens_candidatos_all
+
+patrimonio_candidatos_all <- bens_candidatos_all %>%
+  group_by(descEleicao, siglaUF, sequencialCandidato) %>%
+  summarise(totalBens = sum(valorBem))
+
+consulta_candidatos_all <- consulta_candidatos_all %>%
+  left_join(patrimonio_candidatos_all, by = c('descEleicao', 'siglaUF', 'sequencialCandidato'))
 
 apto <- c(2, 4, 8, 16, 17, 18, 19)
 inapto <- c(5, 6, 7, 9, 10, 11, 13, 14)

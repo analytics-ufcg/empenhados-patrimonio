@@ -3,7 +3,7 @@
 set -e
 # set -d
 
-for ano in 2008 2010 2012 2014 2016; do 
+for ano in 2008 2010 2012 2014 2016 2018; do 
 	DPATH="$PWD/consulta_cand_${ano}/*.txt"
 	BPATH="$PWD/consulta_cand_${ano}_clean"
 	TFILE="$PWD/out.tmp.$$"
