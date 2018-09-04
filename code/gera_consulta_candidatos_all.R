@@ -67,12 +67,24 @@ candidatos_all <- gera_consulta_candidados_all()
 consulta_candidatos_all <- candidatos_all$consulta_candidatos_all
 bens_candidatos_all <- candidatos_all$bens_candidatos_all
 
+bens_seq_2008 <- bens_candidatos_all %>%
+  filter(anoEleicao == 2008) %>%
+  select(sequencialCandidato)
+
+candidatos_seq_2008 <- consulta_candidatos_all %>%
+  filter(anoEleicao == 2008) %>%
+  select(sequencialCandidato)
+
 patrimonio_candidatos_all <- bens_candidatos_all %>%
+  mutate(descEleicao = toupper(descEleicao)) %>%
   group_by(descEleicao, siglaUF, sequencialCandidato) %>%
   summarise(totalBens = sum(valorBem))
 
-consulta_candidatos_all <- consulta_candidatos_all %>%
-  left_join(patrimonio_candidatos_all, by = c('descEleicao', 'siglaUF', 'sequencialCandidato'))
+
+consulta_candidatos_all <- consulta_candidatos_all %>% 
+  mutate(descEleicao = toupper(descEleicao)) %>%
+  left_join(patrimonio_candidatos_all,by = c('descEleicao', 'siglaUF', 'sequencialCandidato')) 
+
 
 apto <- c(2, 4, 8, 16, 17, 18, 19)
 inapto <- c(5, 6, 7, 9, 10, 11, 13, 14)
