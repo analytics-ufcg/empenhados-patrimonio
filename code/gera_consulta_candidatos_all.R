@@ -130,7 +130,6 @@ consulta_candidatos_all <- consulta_candidatos_all %>%
     TRUE ~ "INDEFINIDO"
   ))
 
-
 consulta_candidatos_all %>% filter(descSituacaoEleito == 2) %>% View()
 
 unique(consulta_candidatos_all$descSituacaoEleito)

@@ -1,0 +1,83 @@
+---
+title: "Candidatos mais ricos por partido"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  screenshot.force = FALSE,
+  fig.align = 'center',
+  fig.width = 7)
+
+options(scipen = 999)
+
+library(tidyverse)
+library(ggplot2)
+theme_set(theme_bw())
+```
+
+```{r}
+eleicoes <- src_mysql('eleicoes', group='ministerio-publico', password=NULL, username = "empenhados")
+
+query <- sql('
+             SELECT *
+             FROM candidatos_eleicao
+             WHERE ano_Eleicao = 2018')
+
+candidatos_2018 <- tbl(eleicoes, query) %>%
+  collect()
+
+cod_partido <- tbl(eleicoes, 'cod_partido') %>%
+  collect()
+
+candidatos_2018 <- candidatos_2018 %>%
+  left_join(cod_partido)
+```
+
+## Visão Geral
+
+```{r}
+candidatos_2018 %>%
+  ggplot(aes(x = sigla_Partido, y = total_bens, color = sigla_Partido)) +
+  geom_boxplot(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10)))
+```
+```{r}
+candidatos_2018 %>%
+  filter(total_bens <= 2.5e6) %>%
+  ggplot(aes(x = sigla_Partido, y = total_bens, color = sigla_Partido)) +
+  geom_boxplot(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10) ))
+```
+
+```{r}
+patrimonio_por_partido <- candidatos_2018 %>%
+  group_by(sigla_Partido) %>%
+  summarise(
+    total_bens = sum(total_bens),
+    media_bens = mean(total_bens),
+    mediana_bens = median(total_bens)
+  )
+```
+
+```{r}
+patrimonio_por_partido %>%
+  ggplot(aes(x = sigla_Partido, y = total_bens, fill = sigla_Partido)) +
+  geom_bar(stat = "identity", show.legend = FALSE) + 
+  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10) ))
+```
+
+
+## Mais ricos por partido
+
+```{r}
+top_por_partido <- candidatos_2018 %>%
+  group_by(sigla_Partido) %>%
+  top_n(10, wt = total_bens)
+
+```
+
+
