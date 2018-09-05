@@ -39,25 +39,39 @@ candidatos_2018 <- candidatos_2018 %>%
 
 ## Visão Geral
 
+Nesta análise estudamos os dados de patrimônio dos candidatos em 2018. Faremos nosso estudo sob a perspectiva dos partidos políticos
+
+Atualmente temos `r candidatos_2018$sigla_Partido %>% unique() %>% length()` partidos políticos, 
+
+
+```{r}
+library(wordcloud)
+
+wordcloud(words = patrimonio_por_partido$sigla_Partido, freq=patrimonio_por_partido$soma_bens)
+```
+
 ```{r}
 candidatos_2018 %>%
   ggplot(aes(x = sigla_Partido, y = total_bens, color = sigla_Partido)) +
   geom_boxplot(show.legend = FALSE) +
-  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10)))
+  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10))) +
+  labs(x = "Partido", y = "Patrimônio")
 ```
 ```{r}
 candidatos_2018 %>%
   filter(total_bens <= 2.5e6) %>%
   ggplot(aes(x = sigla_Partido, y = total_bens, color = sigla_Partido)) +
   geom_boxplot(show.legend = FALSE) +
-  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10) ))
+  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10) )) +
+  labs(x = "Partido", y = "Patrimônio")
+
 ```
 
 ```{r}
 patrimonio_por_partido <- candidatos_2018 %>%
   group_by(sigla_Partido) %>%
   summarise(
-    total_bens = sum(total_bens),
+    soma_bens = sum(total_bens),
     media_bens = mean(total_bens),
     mediana_bens = median(total_bens)
   )
@@ -65,9 +79,10 @@ patrimonio_por_partido <- candidatos_2018 %>%
 
 ```{r}
 patrimonio_por_partido %>%
-  ggplot(aes(x = sigla_Partido, y = total_bens, fill = sigla_Partido)) +
+  ggplot(aes(x = sigla_Partido, y = soma_bens, fill = sigla_Partido)) +
   geom_bar(stat = "identity", show.legend = FALSE) + 
-  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10) ))
+  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10))) +
+  labs(x = "Partido", y = "Patrimônio")
 ```
 
 
@@ -76,8 +91,12 @@ patrimonio_por_partido %>%
 ```{r}
 top_por_partido <- candidatos_2018 %>%
   group_by(sigla_Partido) %>%
-  top_n(10, wt = total_bens)
-
+  top_n(3, wt = total_bens)
 ```
 
-
+```{r}
+ggplot(top_por_partido, aes(x=sigla_Partido, y=total_bens, color=sigla_Partido)) +
+  geom_point(show.legend = FALSE) + 
+  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10))) +
+  labs(x = "Partido", y = "Patrimônio")
+```
