@@ -1,0 +1,206 @@
+---
+title: "Patrimônio dos candidatos por estado"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE,
+    warning = FALSE,
+    message = FALSE,
+    fig.align = 'center')
+```
+
+```{r}
+library(tidyverse)
+library(RMySQL)
+library(extrafont)
+library(rgdal)
+library(leaflet)
+library(here)
+
+# Execute uma única vez para instalar as fontes necessárias: font_import()
+options(scipen = 999)
+
+paleta = c("#A8DBA8", "#79BD9A")
+```
+
+<style>
+.html-widget {
+    margin: auto;
+}
+</style>
+
+```{r}
+theme_custom <- function(title_text_size = 16, text_size = 12, title_margin_bottom = 10) {
+    tema <- theme_minimal(base_family = "RobotoCondensed-Regular")
+
+    tema$plot.title <-
+        ggplot2::element_text(
+            hjust = 0,
+            size = title_text_size,
+            margin = margin(b = title_margin_bottom),
+            family = "Garamond"
+        )
+
+    tema$strip.text <- 
+        ggplot2::element_text(
+            hjust = 0,
+            size = text_size,
+            family = "Roboto-Bold"
+        )
+    return(tema)
+}
+
+theme_set(theme_custom())
+```
+
+
+```{r}
+eleicoes <- src_mysql('eleicoes', group='ministerio-publico', password=NULL, username = "shiny")
+
+query <- sql('
+             SELECT *
+             FROM candidatos_eleicao
+             WHERE ano_Eleicao = 2018')
+
+candidatos_2018 <- tbl(eleicoes, query) %>%
+  collect(n = Inf)
+
+cod_partido <- tbl(eleicoes, 'cod_partido') %>%
+    collect(n = Inf)
+
+cod_cargo <- tbl(eleicoes, 'cod_cargo') %>% 
+    collect(n = Inf)
+
+candidatos_2018 <- candidatos_2018 %>%
+    left_join(cod_partido, by = "numero_Partido") %>% 
+    left_join(cod_cargo, by = "cod_Cargo")
+```
+
+## Visão geral
+
+Nesta análise iremos descobrir sobre o patrimônio dos candidatos nas eleições de 2018 quando agrupamos por estado.
+
+Para cado estado, sumarizamos os candidatos considerando a mediana do valor total de bens declarados ao TSE. Candidatos que não declararam nenhum bem são descartados.
+
+```{r}
+unid_federativas_group <- candidatos_2018 %>% 
+    filter(total_bens > 0) %>% 
+    group_by(sigla_UF) %>% 
+    summarise(n_candidatos = n(),
+              median_bens = median(total_bens)) %>% 
+    arrange(desc(median_bens))
+```
+
+Considerando todas as unidades federativas e incluindo 'BR' que representa os candidatos a presidência e vice-presidência temos o seguinte cenário.
+
+```{r}
+unid_federativas_group %>% 
+    ggplot(aes(x = reorder(sigla_UF, median_bens), 
+               y = median_bens)) + 
+    geom_col(fill = paleta[1], color = paleta[2], width = .75) + 
+    coord_flip() + 
+    labs(
+        title = "Riqueza dos candidatos por estado", 
+        x = "",
+        y = "Mediana do patrimônio dos candidatos"
+    )
+```
+
+Ao considerarmos apenas os estados e o distrito federal o cenário é o seguinte.
+
+```{r}
+unid_federativas_group %>% 
+    filter(sigla_UF != "BR") %>% 
+    ggplot(aes(x = reorder(sigla_UF, median_bens), 
+               y = median_bens)) + 
+    geom_col(fill = paleta[1], color = paleta[2], width = .75) + 
+    coord_flip() + 
+    labs(
+        title = "Riqueza dos candidatos por estado", 
+        x = "",
+        y = "Mediana do patrimônio dos candidatos"
+    ) +
+    scale_y_continuous(breaks = seq(0, 4e5, 5e4))
+```
+
+Essas visualizações facilitam identificar o máximo e o mínimo mas não ajudam a comparar por regiões do Brasil, por exemplo. Tocantins e Santa Catarina se destacam como os estados com candidatos mais ricos do país (adotando a mediana como medida).
+
+## Visão geográfica
+
+Podemos visualizar e comparar os estados considerando o mapa do Brasil. Neste cenário é possível agrupar melhor as regiões.
+```{r results='hide'}
+# fonte: http://www.usp.br/nereus/?dados=brasil
+mapa_brasil <- readOGR(here("data/mapa_brasil/UFEBRASIL.shp"))
+```
+
+```{r}
+estado_sigla = c('AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO')
+
+estado_nome = c('Acre','Alagoas','Amapá','Amazonas','Bahia','Ceará','Distrito Federal','Espírito Santo','Goiás','Maranhão','Mato Grosso','Mato Grosso do Sul','Minas Gerais','Pará','Paraíba','Paraná','Pernambuco','Piauí','Rio de Janeiro',
+'Rio Grande do Norte','Rio Grande do Sul','Rondônia','Roraima','Santa Catarina','São Paulo',
+'Sergipe','Tocantins')
+
+estados <- data.frame(estado_sigla, estado_nome)
+```
+
+```{r}
+estados_patrimonio <- unid_federativas_group %>% 
+    filter(sigla_UF != "BR") %>% 
+    left_join(estados, by = c("sigla_UF" = "estado_sigla"))
+```
+
+```{r}
+mapa_brasil@data <- mapa_brasil@data %>%
+    mutate(NM_ESTADO = iconv(NM_ESTADO, from="UTF-8",to="ASCII//TRANSLIT")) %>% 
+    left_join(estados_patrimonio %>% 
+                  mutate(estado_nome_upper = iconv(toupper(estado_nome), from="UTF-8",to="ASCII//TRANSLIT")), 
+              by = c("NM_ESTADO" = "estado_nome_upper"))
+```
+
+```{r}
+leaflet(data = mapa_brasil) %>%
+  addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+  addPolygons(opacity = 0.5,
+              weight = 1,
+              color = "black",
+              fillColor = colorNumeric("Greens", mapa_brasil@data$median_bens)(mapa_brasil@data$median_bens),
+              label = paste(mapa_brasil@data$estado_nome,
+                            ":", "R$", mapa_brasil@data$median_bens),
+              fillOpacity = 1) %>%
+  addLegend(position = "bottomright",
+            pal = colorNumeric("Greens", mapa_brasil@data$median_bens),
+            values = mapa_brasil@data$median_bens,
+            title = "Patrimônio dos candidatos",
+            opacity = 1, na.label = "Sem dados")
+```
+
+## Para Deputados Federais
+
+Agora vamos olhar apenas os candidatos a Deputado Federal em 2018. Tocantins continua na liderança.
+```{r}
+UF_group_dep_federal <- candidatos_2018 %>% 
+    filter(total_bens > 0, desc_Cargo == "DEPUTADO FEDERAL") %>% 
+    group_by(sigla_UF) %>% 
+    summarise(n_candidatos = n(),
+              median_bens = median(total_bens)) %>% 
+    arrange(desc(median_bens))
+```
+
+```{r}
+UF_group_dep_federal %>% 
+    ggplot(aes(x = reorder(sigla_UF, median_bens), 
+               y = median_bens)) + 
+    geom_col(fill = paleta[1], color = paleta[2], width = .75) + 
+    coord_flip() + 
+    labs(
+        title = "Riqueza dos candidatos a Deputado Federal por estado", 
+        x = "",
+        y = "Mediana do patrimônio dos candidatos"
+    ) +
+    scale_y_continuous(breaks = seq(0, max(UF_group_dep_federal$median_bens), 10e4))
+```
+
+
+
