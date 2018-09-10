@@ -18,6 +18,7 @@ library(extrafont)
 library(rgdal)
 library(leaflet)
 library(here)
+library(plotly)
 
 # Execute uma única vez para instalar as fontes necessárias: font_import()
 options(scipen = 999)
@@ -53,6 +54,12 @@ theme_custom <- function(title_text_size = 16, text_size = 12, title_margin_bott
 }
 
 theme_set(theme_custom())
+```
+
+```{r}
+str_to_brl = function(l){
+  paste("R$", format(l, big.mark = ".", scientific = FALSE, trim = TRUE, decimal.mark = ","))
+} 
 ```
 
 
@@ -282,9 +289,9 @@ leaflet(data = mapa_brasil) %>%
             title = "Patrimônio dos candidatos",
             opacity = 1, na.label = "Sem dados")
 ```
-
-Ao dividirmos o país é 4 grupos de estados temos a seguinte visualização
-
+<br>
+Ao dividirmos o país é 4 grupos de estados temos a seguinte visualização.
+<br>
 ```{r}
 leaflet(data = mapa_brasil) %>%
   addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
@@ -304,9 +311,24 @@ leaflet(data = mapa_brasil) %>%
 
 ## Candidatos mais ricos por estado
 
-A visualização a seguir mostra os 5 candidatos mais ricos por estado
+A visualização a seguir mostra os 3 candidatos mais ricos por estado
 
 ```{r}
+candidatos_2018 %>% 
+    group_by(sigla_UF) %>%
+    top_n(3, wt = total_bens) %>% 
+    
+    plot_ly(mode = 'markers', x = ~sigla_UF, y = ~total_bens, type = 'scatter', 
+            marker = list(color = paleta[2]),
+            text = ~paste(nome_Urna_Candidato, "(", sigla_UF, ")",
+                          "<br>", desc_Cargo, " - ", sigla_Partido,
+                          "<br> Em 2018: ", str_to_brl(total_bens)),
+            hoverinfo = 'text') %>% 
+    layout(xaxis = list(title = "Unidade Federativa"),
+           yaxis = list(title = "Valor em Reais"),
+           title = "3 maiores patrimônios por estado",
+           margin = list(b = 30, t = 30)) %>% 
+     config(displayModeBar = F)
 
 ```
 
