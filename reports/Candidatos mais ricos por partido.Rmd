@@ -20,7 +20,7 @@ theme_set(theme_bw())
 ```
 
 ```{r}
-eleicoes <- src_mysql('eleicoes', group='ministerio-publico', password=NULL, username = "empenhados")
+eleicoes <- src_mysql('eleicoes', group='ministerio-publico', password=NULL, username = "shiny")
 
 query <- sql('
              SELECT *
@@ -44,11 +44,7 @@ Nesta análise estudamos os dados de patrimônio dos candidatos em 2018. Faremos
 Atualmente temos `r candidatos_2018$sigla_Partido %>% unique() %>% length()` partidos políticos, 
 
 
-```{r}
-library(wordcloud)
 
-wordcloud(words = patrimonio_por_partido$sigla_Partido, freq=patrimonio_por_partido$soma_bens)
-```
 
 ```{r}
 candidatos_2018 %>%
@@ -85,6 +81,11 @@ patrimonio_por_partido %>%
   labs(x = "Partido", y = "Patrimônio")
 ```
 
+```{r}
+library(wordcloud)
+
+wordcloud(words = patrimonio_por_partido$sigla_Partido, freq=patrimonio_por_partido$soma_bens)
+```
 
 ## Mais ricos por partido
 
