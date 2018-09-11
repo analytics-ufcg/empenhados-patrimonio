@@ -1,0 +1,86 @@
+---
+title: "Histórico do patrimônio dos candidatos"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE,
+    warning = FALSE,
+    message = FALSE,
+    fig.align = 'center')
+```
+
+```{r}
+library(tidyverse)
+library(RMySQL)
+library(plotly)
+```
+
+```{r}
+str_to_brl = function(l){
+  paste("R$", format(l, big.mark = ".", scientific = FALSE, trim = TRUE, decimal.mark = ","))
+} 
+```
+
+```{r}
+eleicoes_connection <- src_mysql('eleicoes', group='ministerio-publico', password=NULL, username = "shiny")
+
+cod_partido <- tbl(eleicoes_connection, 'cod_partido') %>%
+    collect(n = Inf)
+
+cod_cargo <- tbl(eleicoes_connection, 'cod_cargo') %>% 
+    collect(n = Inf)
+
+# Governador possui cargo 3
+query <- sql('
+             SELECT *
+             FROM candidatos_eleicao
+             WHERE ano_Eleicao = 2018 AND cod_cargo = 3')
+
+candidatos_governador <- tbl(eleicoes_connection, query) %>%
+  collect(n = Inf)
+```
+
+```{r seleciona candidato}
+set.seed(1111)
+
+candidato_cpf <- as.numeric(candidatos_governador %>% sample_n(1) %>% select(cpf_Candidato))
+```
+
+```{r}
+query <- paste0('SELECT *
+                 FROM candidatos_eleicao
+                 WHERE cpf_Candidato = ', candidato_cpf)
+
+candidato_historico <- tbl(eleicoes_connection, sql(query)) %>%
+    collect(n = Inf) %>% 
+    left_join(cod_cargo) %>% 
+    left_join(cod_partido)
+```
+
+O objetivo desta análise é apresentar possíveis visualizações que informem sobre o histórico de um candidato com relação ao seu patrimônio. A visualização a seguir mostra o histórico da evolução do patrimônio do candidato de 2008 até 2018. O candidato mostrado foi selecionado de forma aleatória.
+
+```{r}
+candidato_historico <- candidato_historico %>%
+    mutate(cargo_ano = paste0(ano_Eleicao, "<br>", desc_Cargo))
+
+candidato_historico %>% 
+    plot_ly(x = ~ano_Eleicao, y = ~total_bens,
+            type = 'scatter', mode = 'lines+markers',
+            text = ~paste(nome_Urna_Candidato, "(", sigla_UF, ")",
+                          "<br>", desc_Cargo, " - ", sigla_Partido,
+                          "<br> Situação: ", classe_Situacao_Eleicao,
+                          "<br> Em ", ano_Eleicao, ": ", str_to_brl(total_bens)),
+            hoverinfo = 'text', connectgaps = TRUE) %>% 
+    layout(xaxis = list(title = "", 
+                        tickvals = candidato_historico$ano_Eleicao, 
+                        ticktext = candidato_historico$cargo_ano),
+           yaxis = list(title = "Patrimônio em Reais"),
+           title = "Histórico do candidato",
+           margin = list(b = 30, t = 30)) %>% 
+     config(displayModeBar = F)
+```
+É possível perceber o aumento do patrimônio em todas as eleições como também o cargo disputado pelo candidato.
+
+
