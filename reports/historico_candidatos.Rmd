@@ -13,8 +13,11 @@ knitr::opts_chunk$set(
 
 ```{r}
 library(tidyverse)
+library(ggplot2)
 library(RMySQL)
 library(plotly)
+
+theme_set(theme_minimal())
 ```
 
 ```{r}
@@ -83,4 +86,18 @@ candidato_historico %>%
 ```
 É possível perceber o aumento do patrimônio em todas as eleições como também o cargo disputado pelo candidato.
 
+Se incluirmos a informação do cargo como a cor, teremos a seguinte visualização.
+```{r}
+candidato_historico %>% 
+    ggplot(aes(x = ano_Eleicao, y = total_bens, color = desc_Cargo)) +
+    geom_point() +
+    geom_line(aes(group=1)) +
+    labs(y = "Patrimônio em Reais", 
+         x = "",
+         color = "Cargo",
+         title = "Histórico do candidato") +
+    scale_x_continuous(breaks = candidato_historico$ano_Eleicao) +
+    scale_color_brewer(palette="Dark2")
+            
+```
 
