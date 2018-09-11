@@ -1,0 +1,335 @@
+---
+title: "Patrimônio dos candidatos por estado"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE,
+    warning = FALSE,
+    message = FALSE,
+    fig.align = 'center')
+```
+
+```{r}
+library(tidyverse)
+library(RMySQL)
+library(extrafont)
+library(rgdal)
+library(leaflet)
+library(here)
+library(plotly)
+
+# Execute uma única vez para instalar as fontes necessárias: font_import()
+options(scipen = 999)
+
+paleta = c("#A8DBA8", "#79BD9A")
+```
+
+<style>
+.html-widget {
+    margin: auto;
+}
+</style>
+
+```{r}
+theme_custom <- function(title_text_size = 16, text_size = 12, title_margin_bottom = 10) {
+    tema <- theme_minimal(base_family = "RobotoCondensed-Regular")
+
+    tema$plot.title <-
+        ggplot2::element_text(
+            hjust = 0,
+            size = title_text_size,
+            margin = margin(b = title_margin_bottom),
+            family = "Garamond"
+        )
+
+    tema$strip.text <- 
+        ggplot2::element_text(
+            hjust = 0,
+            size = text_size,
+            family = "Roboto-Bold"
+        )
+    return(tema)
+}
+
+theme_set(theme_custom())
+```
+
+```{r}
+str_to_brl = function(l){
+  paste("R$", format(l, big.mark = ".", scientific = FALSE, trim = TRUE, decimal.mark = ","))
+} 
+```
+
+
+```{r}
+eleicoes_connection <- src_mysql('eleicoes', group='ministerio-publico', password=NULL, username = "shiny")
+
+query <- sql('
+             SELECT *
+             FROM candidatos_eleicao
+             WHERE ano_Eleicao = 2018')
+
+candidatos_2018 <- tbl(eleicoes_connection, query) %>%
+  collect(n = Inf)
+
+cod_partido <- tbl(eleicoes_connection, 'cod_partido') %>%
+    collect(n = Inf)
+
+cod_cargo <- tbl(eleicoes_connection, 'cod_cargo') %>% 
+    collect(n = Inf)
+
+candidatos_2018 <- candidatos_2018 %>%
+    left_join(cod_partido, by = "numero_Partido") %>% 
+    left_join(cod_cargo, by = "cod_Cargo")
+```
+
+## Visão geral
+
+Nesta análise iremos descobrir sobre o patrimônio dos candidatos nas eleições de 2018 quando agrupamos por estado.
+
+Para cado estado, sumarizamos os candidatos considerando a mediana do valor total de bens declarados ao TSE. Candidatos que não declararam nenhum bem são descartados.
+
+```{r}
+uf_patrimonio <- candidatos_2018 %>% 
+    filter(total_bens > 0) %>% 
+    group_by(sigla_UF) %>% 
+    summarise(n_candidatos = n(),
+              median_bens = median(total_bens)) %>% 
+    arrange(desc(median_bens))
+```
+
+Considerando todas as unidades federativas e incluindo 'BR' que representa os candidatos a presidência e vice-presidência temos o seguinte cenário.
+
+```{r}
+uf_patrimonio %>% 
+    ggplot(aes(x = reorder(sigla_UF, median_bens), 
+               y = median_bens)) + 
+    geom_col(fill = paleta[1], color = paleta[2], width = .75) + 
+    coord_flip() + 
+    labs(
+        title = "Riqueza dos candidatos por estado",
+        caption = "Incluindo candidatos a presidente (BR)",
+        x = "",
+        y = "Mediana do patrimônio dos candidatos"
+    )
+```
+
+Ao considerarmos apenas os estados e o distrito federal o cenário é o seguinte.
+
+```{r}
+uf_patrimonio %>% 
+    filter(sigla_UF != "BR") %>% 
+    ggplot(aes(x = reorder(sigla_UF, median_bens), 
+               y = median_bens)) + 
+    geom_col(fill = paleta[1], color = paleta[2], width = .75) + 
+    coord_flip() + 
+    labs(
+        title = "Riqueza dos candidatos por estado", 
+        x = "",
+        y = "Mediana do patrimônio dos candidatos"
+    ) +
+    scale_y_continuous(breaks = seq(0, 4e5, 5e4))
+```
+
+Essas visualizações facilitam identificar o máximo e o mínimo mas não ajudam a comparar por regiões do Brasil, por exemplo. Tocantins e Santa Catarina se destacam como os estados com candidatos mais ricos do país (adotando a mediana como medida).
+
+## Visão geográfica
+
+Podemos visualizar e comparar os estados considerando o mapa do Brasil. Neste cenário é possível agrupar melhor as regiões.
+```{r results='hide'}
+# fonte: http://www.usp.br/nereus/?dados=brasil
+mapa_brasil <- readOGR(here("data/mapa_brasil/UFEBRASIL.shp"))
+```
+
+```{r}
+estado_sigla = c('AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO')
+
+estado_nome = c('Acre','Alagoas','Amapá','Amazonas','Bahia','Ceará','Distrito Federal','Espírito Santo','Goiás','Maranhão','Mato Grosso','Mato Grosso do Sul','Minas Gerais','Pará','Paraíba','Paraná','Pernambuco','Piauí','Rio de Janeiro',
+'Rio Grande do Norte','Rio Grande do Sul','Rondônia','Roraima','Santa Catarina','São Paulo',
+'Sergipe','Tocantins')
+
+estados <- data.frame(estado_sigla, estado_nome, stringsAsFactors = FALSE)
+```
+
+```{r}
+uf_patrimonio_mapa <- uf_patrimonio %>% 
+    filter(sigla_UF != "BR") %>% 
+    left_join(estados, by = c("sigla_UF" = "estado_sigla"))
+```
+
+```{r}
+mapa_brasil@data <- mapa_brasil@data %>%
+    mutate(NM_ESTADO = iconv(NM_ESTADO, from="UTF-8",to="ASCII//TRANSLIT")) %>% 
+    left_join(uf_patrimonio_mapa %>% 
+                  mutate(estado_nome_upper = iconv(toupper(estado_nome), from="UTF-8",to="ASCII//TRANSLIT")), 
+              by = c("NM_ESTADO" = "estado_nome_upper"))
+```
+
+```{r}
+leaflet(data = mapa_brasil) %>%
+  addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+  addPolygons(opacity = 0.5,
+              weight = 1,
+              color = "black",
+              fillColor = colorNumeric("Greens", mapa_brasil@data$median_bens)(mapa_brasil@data$median_bens),
+              label = paste(mapa_brasil@data$estado_nome,
+                            ":", "R$", mapa_brasil@data$median_bens),
+              fillOpacity = 1) %>%
+  addLegend(position = "bottomright",
+            pal = colorNumeric("Greens", mapa_brasil@data$median_bens),
+            values = mapa_brasil@data$median_bens,
+            title = "Patrimônio dos candidatos",
+            opacity = 1, na.label = "Sem dados")
+```
+
+## Apenas Deputados Federais
+
+Agora vamos olhar apenas os candidatos a Deputado Federal em 2018. Tocantins continua na liderança.
+```{r}
+uf_deputado_federal <- candidatos_2018 %>% 
+    filter(total_bens > 0, desc_Cargo == "DEPUTADO FEDERAL") %>% 
+    group_by(sigla_UF) %>% 
+    summarise(n_candidatos = n(),
+              median_bens = median(total_bens)) %>% 
+    arrange(desc(median_bens))
+```
+
+```{r}
+uf_deputado_federal %>% 
+    ggplot(aes(x = reorder(sigla_UF, median_bens), 
+               y = median_bens)) + 
+    geom_col(fill = paleta[1], color = paleta[2], width = .75) + 
+    coord_flip() + 
+    labs(
+        title = "Riqueza dos candidatos a Deputado Federal por estado", 
+        x = "",
+        y = "Mediana do patrimônio dos candidatos"
+    ) +
+    scale_y_continuous(breaks = seq(0, max(uf_deputado_federal$median_bens), 10e4))
+```
+
+Distrito federal e Acre figuram entre a 2ª e 3ª posição, respectivamente. 
+
+## Razão entre a população acumulada dos candidatos e a população do estado
+
+A visualização a seguir busca mostrar como se dispõem os estados quando comparamos a razão entre o total de patrimônios declarados entre todos os candidatos daquele estado e a população do mesmo. Os dados de população foram extraídos [aqui](https://pt.wikipedia.org/wiki/Lista_de_unidades_federativas_do_Brasil_por_popula%C3%A7%C3%A3o).
+
+```{r}
+library(htmltab)
+
+url_tabela_populacao <- "https://pt.wikipedia.org/wiki/Lista_de_unidades_federativas_do_Brasil_por_popula%C3%A7%C3%A3o"
+
+populacao_estados <- htmltab(url_tabela_populacao, 1) %>% 
+    select(posicao = `Posição`, UF = `Unidade federativa`, populacao = `População`) %>% 
+    mutate(UF = substring(UF, 2)) %>% 
+    mutate(populacao = gsub(" ", "", populacao, fixed = TRUE)) %>% 
+    mutate(populacao = as.numeric(populacao))
+```
+
+```{r}
+uf_patrimonio_populacao <- candidatos_2018 %>% 
+    group_by(sigla_UF) %>% 
+    summarise(n_candidatos = n(),
+              median_bens = median(total_bens),
+              soma = sum(total_bens)) %>% 
+    filter(sigla_UF != "BR") %>% 
+    
+    left_join(estados, by = c("sigla_UF" = "estado_sigla")) %>% 
+    
+    mutate(UF = iconv(toupper(estado_nome), from="UTF-8",to="ASCII//TRANSLIT")) %>% 
+    left_join(populacao_estados %>% 
+                   mutate(UF = iconv(toupper(UF), from="UTF-8",to="ASCII//TRANSLIT")), 
+              by = "UF") %>% 
+    
+    mutate(proporcao_patrimonio = soma / populacao)
+```
+
+```{r}
+uf_patrimonio_populacao %>% 
+    ggplot(aes(x = reorder(sigla_UF, proporcao_patrimonio), 
+               y = proporcao_patrimonio)) + 
+    geom_col(fill = paleta[1], color = paleta[2], width = .75) + 
+    coord_flip() + 
+    labs(
+        title = "Riqueza dos candidatos pela população do estado", 
+        x = "",
+        y = "Razão entre o patrimônio acumulado e a população do estado"
+    ) +
+    scale_y_continuous(breaks = seq(0, max(uf_patrimonio_populacao$proporcao_patrimonio), 250))
+```
+
+Acre e Tocantins estão bem distantes dos demais estados. Um segundo grupo formado por Distrito Federal, Roraima e Mato Grosso completam o Top 5 UFs com maior razão.
+
+Se olharmos o mapa do Brasil adotando esta razão como foco temos
+
+```{r results='hide'}
+mapa_brasil <- readOGR(here("data/mapa_brasil/UFEBRASIL.shp"))
+
+mapa_brasil@data <- mapa_brasil@data %>%
+    mutate(NM_ESTADO = iconv(NM_ESTADO, from="UTF-8",to="ASCII//TRANSLIT")) %>% 
+    left_join(uf_patrimonio_populacao, 
+              by = c("NM_ESTADO" = "UF"))
+```
+
+```{r}
+leaflet(data = mapa_brasil) %>%
+  addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+  addPolygons(opacity = 0.5,
+              weight = 1,
+              color = "black",
+              fillColor = colorBin("Greens", mapa_brasil@data$proporcao_patrimonio)(mapa_brasil@data$proporcao_patrimonio),
+              label = paste(mapa_brasil@data$estado_nome,
+                            ":", mapa_brasil@data$proporcao_patrimonio),
+              fillOpacity = 1) %>%
+  addLegend(position = "bottomright",
+            pal = colorBin("Greens", mapa_brasil@data$proporcao_patrimonio),
+            values = mapa_brasil@data$proporcao_patrimonio,
+            title = "Patrimônio dos candidatos",
+            opacity = 1, na.label = "Sem dados")
+```
+<br>
+Ao dividirmos o país é 4 grupos de estados temos a seguinte visualização.
+<br>
+```{r}
+leaflet(data = mapa_brasil) %>%
+  addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+  addPolygons(opacity = 0.5,
+              weight = 1,
+              color = "black",
+              fillColor = colorQuantile("Greens", mapa_brasil@data$proporcao_patrimonio)(mapa_brasil@data$proporcao_patrimonio),
+              label = paste(mapa_brasil@data$estado_nome,
+                            ":", mapa_brasil@data$proporcao_patrimonio),
+              fillOpacity = 1) %>%
+  addLegend(position = "bottomright",
+            pal = colorQuantile("Greens", mapa_brasil@data$proporcao_patrimonio),
+            values = mapa_brasil@data$proporcao_patrimonio,
+            title = "Patrimônio dos candidatos",
+            opacity = 1, na.label = "Sem dados")
+```
+
+## Candidatos mais ricos por estado
+
+A visualização a seguir mostra os 3 candidatos mais ricos por estado
+
+```{r}
+candidatos_2018 %>% 
+    group_by(sigla_UF) %>%
+    top_n(3, wt = total_bens) %>% 
+    
+    plot_ly(mode = 'markers', x = ~sigla_UF, y = ~total_bens, type = 'scatter', 
+            marker = list(color = paleta[2]),
+            text = ~paste(nome_Urna_Candidato, "(", sigla_UF, ")",
+                          "<br>", desc_Cargo, " - ", sigla_Partido,
+                          "<br> Em 2018: ", str_to_brl(total_bens)),
+            hoverinfo = 'text') %>% 
+    layout(xaxis = list(title = "Unidade Federativa"),
+           yaxis = list(title = "Valor em Reais"),
+           title = "3 maiores patrimônios por estado",
+           margin = list(b = 30, t = 30)) %>% 
+     config(displayModeBar = F)
+
+```
+
+
