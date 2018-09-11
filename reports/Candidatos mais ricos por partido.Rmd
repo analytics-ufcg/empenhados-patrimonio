@@ -128,8 +128,9 @@ top_por_partido <- candidatos_2018 %>%
   group_by(sigla_Partido) %>%
   top_n(3, wt = total_bens)
 
+
 top_por_partido %>%
-  plot_ly(x = ~total_bens, y=~sigla_Partido, color =~sigla_Partido, mode = 'markers', type= 'scatter',
+  plot_ly(x = ~total_bens, y=~reorder(sigla_Partido, total_bens), color =~sigla_Partido, mode = 'markers', type= 'scatter',
           text = ~paste(nome_Urna_Candidato, "(", sigla_Partido, ")", 
                         "<br>", str_to_brl(total_bens)),
           hoverinfo = 'text') %>%
@@ -160,7 +161,7 @@ nao_declararam <- candidatos_2018 %>%
 
 nao_declararam <- nao_declararam[order(nao_declararam$perc),]
 
-datatable(nao_declararam, colnames = c("Partido", "# de candidatos que não declararam", "# candidatos total", "Porcentagem"),
+datatable(nao_declararam, colnames = c("Partido", "# de candidatos que não declararam", "# candidatos (total)", "Porcentagem"),
           rownames = FALSE)
 ```
 
