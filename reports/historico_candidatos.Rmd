@@ -101,3 +101,27 @@ candidato_historico %>%
             
 ```
 
+```{r}
+candidato_historico %>% 
+    ggplot(aes(x = "", y = desc(ano_Eleicao))) +
+    geom_point() +
+    geom_text(aes(label = paste0(sigla_Partido, " (", ano_Eleicao, ")")), hjust=-0.1, vjust=0) +
+    scale_y_continuous(breaks = candidato_historico$ano_Eleicao) +
+    geom_line() +
+    labs(color = "Partido") +
+    theme_void()
+```
+
+```{r}
+candidato_historico %>% 
+    ggplot(aes(x = "", y = desc(ano_Eleicao))) +
+    geom_point(aes(color = sigla_Partido)) +
+    geom_text(aes(label = ano_Eleicao, hjust=1.5, vjust=0)) +
+    geom_text(aes(label = sigla_Partido, color = sigla_Partido), hjust=-0.1, vjust=0) +
+    scale_y_continuous(breaks = candidato_historico$ano_Eleicao) +
+    geom_line(aes(color = sigla_Partido, group = 1)) +
+    labs(color = "Partido") +
+    scale_color_brewer(palette="Dark2") +
+    theme_void()
+```
+
