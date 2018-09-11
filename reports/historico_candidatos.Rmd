@@ -69,16 +69,16 @@ candidato_historico <- candidato_historico %>%
     mutate(cargo_ano = paste0(ano_Eleicao, "<br>", desc_Cargo))
 
 candidato_historico %>% 
-    plot_ly(x = ~ano_Eleicao, y = ~total_bens,
-            type = 'scatter', mode = 'lines+markers',
+    plot_ly(x = ~ano_Eleicao, y = ~total_bens, 
+            type = 'scatter', mode = 'lines',
             text = ~paste(nome_Urna_Candidato, "(", sigla_UF, ")",
                           "<br>", desc_Cargo, " - ", sigla_Partido,
                           "<br> Situação: ", classe_Situacao_Eleicao,
                           "<br> Em ", ano_Eleicao, ": ", str_to_brl(total_bens)),
-            hoverinfo = 'text', connectgaps = TRUE) %>% 
+            hoverinfo = 'text', line = list(color = 'rgb(93, 93, 93)')) %>%
+  add_trace(color = ~desc_Cargo, mode = 'markers', marker = list(size = 10)) %>%
     layout(xaxis = list(title = "", 
-                        tickvals = candidato_historico$ano_Eleicao, 
-                        ticktext = candidato_historico$cargo_ano),
+                        tickvals = candidato_historico$ano_Eleicao),
            yaxis = list(title = "Patrimônio em Reais"),
            title = "Histórico do candidato",
            margin = list(b = 30, t = 30)) %>% 
