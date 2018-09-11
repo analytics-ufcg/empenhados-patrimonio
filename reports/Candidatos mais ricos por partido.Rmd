@@ -16,6 +16,11 @@ options(scipen = 999)
 
 library(tidyverse)
 library(ggplot2)
+library(scales)
+
+# devtools::install_github("slowkow/ggrepel")
+library(ggrepel)
+
 theme_set(theme_bw())
 ```
 
@@ -35,55 +40,123 @@ cod_partido <- tbl(eleicoes, 'cod_partido') %>%
 
 candidatos_2018 <- candidatos_2018 %>%
   left_join(cod_partido)
-```
 
-## Visão Geral
-
-Nesta análise estudamos os dados de patrimônio dos candidatos em 2018. Faremos nosso estudo sob a perspectiva dos partidos políticos
-
-Atualmente temos `r candidatos_2018$sigla_Partido %>% unique() %>% length()` partidos políticos, 
-
-
-```{r}
-library(wordcloud)
-
-wordcloud(words = patrimonio_por_partido$sigla_Partido, freq=patrimonio_por_partido$soma_bens)
-```
-
-```{r}
-candidatos_2018 %>%
-  ggplot(aes(x = sigla_Partido, y = total_bens, color = sigla_Partido)) +
-  geom_boxplot(show.legend = FALSE) +
-  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10))) +
-  labs(x = "Partido", y = "Patrimônio")
-```
-```{r}
-candidatos_2018 %>%
-  filter(total_bens <= 2.5e6) %>%
-  ggplot(aes(x = sigla_Partido, y = total_bens, color = sigla_Partido)) +
-  geom_boxplot(show.legend = FALSE) +
-  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10) )) +
-  labs(x = "Partido", y = "Patrimônio")
-
-```
-
-```{r}
 patrimonio_por_partido <- candidatos_2018 %>%
   group_by(sigla_Partido) %>%
   summarise(
     soma_bens = sum(total_bens),
     media_bens = mean(total_bens),
-    mediana_bens = median(total_bens)
+    mediana_bens = median(total_bens),
+    sd_bens = sd(total_bens)
   )
 ```
 
+## Perguntas para responder
+
+### Estatística básica - média, mediana de $ por partido
+### Variação de $ entre os partidos
+### Variação de $ dentro do partido
+
+### Quais os partidos mais ricos?
+### Qual o top 3 de cada partido?
+### Análise temporal para ver (de)crescimento do $ partido
+### Destacar partidos cuja mediana é zero (não declararam ou declararam 0 reais)
+
+
+## Visão Geral
+
+Nesta análise estudamos os dados de patrimônio dos candidatos em 2018. Faremos nosso estudo sob a perspectiva dos partidos políticos
+
+É importante ressaltar que nessa análise consideramos como patrimônio de um partido a soma do patrimônio dos seus candidatos nas eleições de 2018 (valores declarados ao TSE).
+
+Atualmente temos `r candidatos_2018$sigla_Partido %>% unique() %>% length()` partidos políticos quem tem em média `r mean(patrimonio_por_partido$soma_bens)` reais e em mediana `r median(patrimonio_por_partido$soma_bens)` reais.
+
+O patrimônio de cada partido em 2018 está distribuído da seguinte forma:
+
+```{r}
+patrimonio_por_partido %>% 
+  ggplot(aes(x = "", y = soma_bens)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_text_repel(aes(label=sigla_Partido), position=position_jitter(width=0.4)) +
+  labs(x = "Partidos", y = "Patrimônio") +
+  scale_y_continuous(breaks=c(0, 1e9, 2e9, 3e9),
+                     labels=c("0", "1 bi", "2 bi", "3 bi"))
+
+```
+
+Observamos que a grande maioria dos partidos tem patrimônio de no máximo 2 bilhões de reais, apenas o __Partido Republicano da Ordem Social (PROS)__ está muito acima desse valor com um total de `r (patrimonio_por_partido %>% filter(sigla_Partido == "PROS"))$soma_bens` reais.
+
+## Variação dentro do partido
+
+```{r}
+candidatos_2018 %>%
+  ggplot(aes(x = sigla_Partido, y = total_bens, color = sigla_Partido)) +
+  geom_point(show.legend = FALSE, alpha = 0.5) +
+  coord_flip() + 
+  #theme(axis.text.x = element_text(angle=45, margin = margin(t = 10))) +
+  labs(x = "Partido", y = "Patrimônio") +
+  scale_y_continuous(breaks=c(0, 1e8, 2.5e8, 5e8, 7.5e8, 1e9),
+                     labels=c("0", "100 mi", "250 mi", "500 mi", "750 mi", "1 bi"))
+```
+
+Neste caso vemos que `r round((candidatos_2018 %>% filter(total_bens <= 1e8) %>% nrow())/(candidatos_2018 %>% nrow()), 3) * 100`% dos candidatos tem até 100 milhões de patrimônio, apenas `r candidatos_2018 %>% filter(total_bens > 1e8) %>% nrow()` possuem mais que isso.
+
+Podemos observar ainda a variação de patrimônio entre candidatos do mesmo observando o desvio padrão.
 ```{r}
 patrimonio_por_partido %>%
-  ggplot(aes(x = sigla_Partido, y = soma_bens, fill = sigla_Partido)) +
-  geom_bar(stat = "identity", show.legend = FALSE) + 
-  theme(axis.text.x = element_text(angle=45, margin = margin(t = 10))) +
-  labs(x = "Partido", y = "Patrimônio")
+  ggplot(aes(y = reorder(sigla_Partido, sd_bens), x = sd_bens)) +
+  geom_point(aes(color = sd_bens), show.legend = FALSE) +
+  scale_color_gradient(low = "blue", high = "red")  +
+  scale_x_continuous(breaks=c(0, 1e7, 2e7, 3e7, 4e7, 5e7),
+                     labels=c("0", "10 mi", "20 mi", "30 mi", "40 mi", "50 mi")) +
+  labs(x = "Desvio padrão", y = "Partido")
 ```
+
+## Partidos mais ricos
+
+```{r}
+
+patrimonio_por_partido_pie <- patrimonio_por_partido %>% 
+  arrange(soma_bens) %>% 
+  mutate(text_y = soma_bens/2)
+
+patrimonio_por_partido %>%
+  ggplot(aes(x = "", fill=reorder(sigla_Partido, soma_bens), y= soma_bens)) +
+  geom_bar( stat = "identity", color = "white") +
+  coord_polar("y", start=0) +
+  geom_label_repel(data = filter(patrimonio_por_partido_pie, soma_bens > 1.5e9),
+                   aes(label = sigla_Partido),position = position_stack(vjust = 0.2),
+                   hjust = -.4, 
+                   show.legend = FALSE) +
+  labs(x = NULL, y = NULL, fill = NULL) +
+  theme(axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank())
+```
+
+
+```{r}
+candidatos_2018 %>%
+  filter(total_bens <= 2.5e6) %>%
+  ggplot(aes(x = reorder(sigla_Partido, total_bens), y = total_bens, color = sigla_Partido)) +
+  geom_boxplot(show.legend = FALSE) +
+  coord_flip() + 
+  labs(x = "Partido", y = "Patrimônio")
+
+```
+
+
+```{r}
+patrimonio_por_partido %>%
+  ggplot(aes(x = reorder(sigla_Partido, soma_bens), y = soma_bens)) +
+  geom_bar(aes(fill = soma_bens), stat = "identity", show.legend = FALSE) + 
+  coord_flip() + 
+  scale_fill_gradient(low = "blue", high = "red")  +
+  labs(x = "Partido", y = "Patrimônio") +
+  scale_y_continuous(breaks=c(0, 1e9, 2e9, 3e9),
+                     labels=c("0", "1 bi", "2 bi", "3 bi"))
+```
+
 
 
 ## Mais ricos por partido
