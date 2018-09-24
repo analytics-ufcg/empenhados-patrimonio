@@ -3,7 +3,7 @@ library(dplyr)
 
 
 importDecalaracao <- function(dataPath, ano) {
-    if (ano == 2018) {
+    if (ano %in% c(2014, 2016, 2018)) {
         return(importDecalaracao2018(dataPath))
     } else {
         declaracao <- read_delim(dataPath, delim = ";", col_names = FALSE, col_types = "cciccciccncc",
@@ -126,25 +126,11 @@ importCandidatos2012 <- function(dataPath){
 }
 
 importCandidatos2014 <- function(dataPath){
-    return(importCandidatos2016(dataPath))
+    return(importCandidatos2018(dataPath))
 }
 
 importCandidatos2016 <- function(dataPath){
-  candidatos_2016 <- read_delim(dataPath, delim = ";", col_names = FALSE,
-                                locale = locale(encoding = "latin1"),
-                                col_types = "cciccccciccccccicicccccciccccicicicicicccccicc")
-  
-  colunas_candidatos <- c("dataGeracao", "horaGeracao", "anoEleicao", "numTurno", "descEleicao", "siglaUF", "siglaUnidEleitoral",
-                                 "descUnidEleitoral", "codCargo", "descCargo", "nomeCandidato", "sequencialCandidato", "numeroCandidato", 
-                                 "cpfCandidato", "nomeUrnaCandidato", "codSituacaoCandidatura", "descSituacaoCandidatura", "numeroPartido", 
-                                 "siglaPartido", "nomePartido", "codLegenda", "siglaLegenda", "composicaoLegenda", "nomeLegenda", "codOcupacao",
-                                 "descOcupacao", "dataNascimento", "numTituloEleitoralCand", "idadeCandDataEleicao", "codSexo", "descSexo", 
-                                 "codGrauInstrucao", "descGrauInstrucao", "codEstadoCivil", "descEstadoCivil", "codCorRaca", "descCorRaca",
-                                 "codNacionalidade", "descNacionalidade", "siglaUFNasc", "codMunicipioNasc", "nomeMunicipioNasc", 
-                                 "despesaMaxCampanha", "codSituacaoEleito", "descSituacaoEleito", "email")
-  colnames(candidatos_2016) <- colunas_candidatos
-  return(candidatos_2016)
-  
+    return(importCandidatos2018(dataPath))
 }
 
 importCandidatos2018 <- function(dataPath){

@@ -82,6 +82,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
         select(
             sequencialCandidato2 = sequencialCandidato,
             siglaUnidEleitoral2 = siglaUnidEleitoral,
+            siglaUF2 = siglaUF,
             descUnidEleitoral,
             nomeCandidato,
             nomeUrnaCandidato,
@@ -101,6 +102,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
                 select(
                     sequencialCandidato1 = sequencialCandidato,
                     siglaUnidEleitoral1 = siglaUnidEleitoral,
+                    siglaUF1 = siglaUF,
                     cpfCandidato,
                     codCargo1 = codCargo,
                     descCargo1 = descCargo,
@@ -133,7 +135,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
       filter(!(cpfCandidato == "34303197491" & codSituacaoEleito1 == -1))
     # Caso particular de JOSE FERNANDES GORGONHO NETO em 2012 (foi candidato a prefeito em 2012 mas teve sua campanha renunciada)
     # Foi removido as ocorrências de segundo turno também
-
+    
     historico_bens_atuais_eleitos %>% 
         mutate_at(c("nomeUrnaCandidato", "descUnidEleitoral"), str_to_title) %>% 
         return()
@@ -141,7 +143,7 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
 
 cria_nome_tse = function(tipo, ano, estado) {
     extensao = ".txt"
-    if (ano == 2018) {
+    if (ano %in% c(2014, 2016, 2018)) {
         extensao = ".csv"
     } 
     
@@ -262,6 +264,8 @@ patrimonios_tidy <- function(historico, ano_eleicao1, ano_eleicao2){
             cd_unidade_eleitoral_1 = siglaUnidEleitoral1,
             cd_unidade_eleitoral_2 = siglaUnidEleitoral2,
             unidade_eleitoral = descUnidEleitoral, 
+            sigla_UF_1 = siglaUF1,
+            sigla_UF_2 = siglaUF2,
             ganho,
             ganho_relativo,
             patrimonio_eleicao_1 = totalBens1,
