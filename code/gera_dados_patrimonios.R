@@ -70,4 +70,5 @@ dados_tse_all <- dados_tse_2012 %>%
   rbind(dados_tse_2018)
 
 dados_tse_all %>%
+  select(-estado) %>%
   write.csv(here("data/patrimonio_candidatos.csv"), row.names = FALSE)
