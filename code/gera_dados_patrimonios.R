@@ -64,11 +64,11 @@ dados_tse_2018 <- tibble(estado = estados_df_br) %>%
     mutate(ano_um = 2014) %>%
     mutate(ano_dois = 2018)
 
-
 dados_tse_all <- dados_tse_2012 %>%
   rbind(dados_tse_2014) %>%
   rbind(dados_tse_2016) %>% 
   rbind(dados_tse_2018)
 
 dados_tse_all %>%
+  select(-estado) %>%
   write.csv(here("data/patrimonio_candidatos.csv"), row.names = FALSE)
