@@ -60,13 +60,13 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
     return(data)
   }
 
-    declaracao_1 <- importDecalaracao(arquivo_bens_1, ano_eleicao1)
-    candidatos_1 <- importCandidatos(arquivo_candidatos_1, ano_eleicao1) 
+    declaracao_1 <- import_declaracao(arquivo_bens_1, ano_eleicao1)
+    candidatos_1 <- import_candidatos(arquivo_candidatos_1, ano_eleicao1) 
     
     candidatos_1 <- determina_situacao(candidatos_1)
 
-    declaracao_2 <- importDecalaracao(arquivo_bens_2, ano_eleicao2)
-    candidatos_2 <- importCandidatos(arquivo_candidatos_2, ano_eleicao2) 
+    declaracao_2 <- import_declaracao(arquivo_bens_2, ano_eleicao2)
+    candidatos_2 <- import_candidatos(arquivo_candidatos_2, ano_eleicao2) 
     
     candidatos_2 <- determina_situacao(candidatos_2)
     

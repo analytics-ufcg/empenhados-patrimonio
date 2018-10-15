@@ -49,12 +49,12 @@ gera_consulta_candidados_all <- function(){
       dataPath <- cria_nome_tse("candidato", ano, estado)
       
       consulta_candidatos_all <- consulta_candidatos_all %>%
-        rbind(importCandidatos(dataPath, ano))
+        rbind(import_candidatos(dataPath, ano))
       
       message("Lendo Bens")
       dataPath_bens <- cria_nome_tse("bem", ano, estado)
       bens_candidatos_all <- bens_candidatos_all %>%
-        rbind(importDecalaracao(dataPath_bens, ano))
+        rbind(import_declaracao(dataPath_bens, ano))
     }
   }
   

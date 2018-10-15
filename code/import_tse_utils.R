@@ -2,9 +2,9 @@ library(readr)
 library(dplyr)
 
 
-importDecalaracao <- function(dataPath, ano) {
+import_declaracao <- function(dataPath, ano) {
     if (ano %in% c(2014, 2016, 2018)) {
-        return(importDecalaracao2018(dataPath))
+        return(import_declaracao_2018(dataPath))
     } else {
         declaracao <- read_delim(dataPath, delim = ";", col_names = FALSE, col_types = "cciccciccncc",
                                  locale = locale(encoding = "latin1")) 
@@ -19,7 +19,7 @@ importDecalaracao <- function(dataPath, ano) {
     }
 }
 
-importDecalaracao2018 <- function(dataPath) {
+import_declaracao_2018 <- function(dataPath) {
     declaracao_2018 <- read_csv2(dataPath, col_names = TRUE, col_types = "cciiciccccccciccncc",
                              locale = locale(encoding = "latin1"))
     
@@ -37,21 +37,21 @@ importDecalaracao2018 <- function(dataPath) {
     return(declaracao_2018)
 }
 
-importCandidatos <- function(dataPath, ano) {
+import_candidatos <- function(dataPath, ano) {
     if(ano == 2008){
-        return(importCandidatos2008(dataPath))
+        return(import_candidatos_2008(dataPath))
     } else if (ano == 2010) {
-        return(importCandidatos2010(dataPath))
+        return(import_candidatos_2010(dataPath))
     } else if (ano == 2012) {
-        return(importCandidatos2012(dataPath))
+        return(import_candidatos_2012(dataPath))
     } else if (ano == 2014) {
-        return(importCandidatos2014(dataPath))
+        return(import_candidatos_2014(dataPath))
     } else if (ano == 2016) {
-        return(importCandidatos2016(dataPath))    
+        return(import_candidatos_2016(dataPath))    
     }
-    return(importCandidatos2018(dataPath))
+    return(import_candidatos_2018(dataPath))
 }
-importCandidatos2008 <- function(dataPath){
+import_candidatos_2008 <- function(dataPath){
     candidatos_2008 <- read_delim(dataPath, delim = ";", col_names = FALSE, 
                                   col_types = "cciccciciccciccicicciccciccciicicicicccciic",
                                   locale = locale(encoding = "latin1"))
@@ -77,7 +77,7 @@ importCandidatos2008 <- function(dataPath){
     return(candidatos_2008)
 }
 
-importCandidatos2010 <- function(dataPath){
+import_candidatos_2010 <- function(dataPath){
   candidatos_2010 <- read_delim(dataPath, delim = ";", col_names = FALSE, 
                                 col_types = "cciicccciccciccicicccccciccciicicicicccciic",
                                 locale = locale(encoding = "latin1"))
@@ -104,7 +104,7 @@ importCandidatos2010 <- function(dataPath){
   return(candidatos_2010)
 }
 
-importCandidatos2012 <- function(dataPath){
+import_candidatos_2012 <- function(dataPath){
     candidatos_2012 <- read_delim(dataPath, delim = ";", col_names = FALSE,
                                   col_types = "cciccccciccccccicicccccciccccicicicicccccicc",
                                   locale = locale(encoding = "latin1"))
@@ -125,15 +125,15 @@ importCandidatos2012 <- function(dataPath){
     return(candidatos_2012)
 }
 
-importCandidatos2014 <- function(dataPath){
-    return(importCandidatos2018(dataPath))
+import_candidatos_2014 <- function(dataPath){
+    return(import_candidatos_2018(dataPath))
 }
 
-importCandidatos2016 <- function(dataPath){
-    return(importCandidatos2018(dataPath))
+import_candidatos_2016 <- function(dataPath){
+    return(import_candidatos_2018(dataPath))
 }
 
-importCandidatos2018 <- function(dataPath){
+import_candidatos_2018 <- function(dataPath){
     candidatos_2018 <- read_delim(dataPath, delim = ";", col_names = TRUE,
                                   locale = locale(encoding = "latin1"),
                                   col_types = "cciicciccccccicccccccciciccicccccicccccicicicicicicniccccc")
