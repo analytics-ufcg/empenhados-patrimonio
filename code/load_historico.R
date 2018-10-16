@@ -63,18 +63,28 @@ read_historico_tse <- function(arquivo_candidatos_1 = "data/consulta_cand_2012_P
     declaracao_1 <- importDecalaracao(arquivo_bens_1, ano_eleicao1)
     candidatos_1 <- importCandidatos(arquivo_candidatos_1, ano_eleicao1) 
     
+    ## Tratamento especial para o ano de 2014. Os dados do TSE estão inconsistentes para este ano.
+    if (ano_eleicao1 == 2014) {
+        candidatos_1 <- ajusta_situacao_2014(candidatos_1)
+    }
+    
     candidatos_1 <- determina_situacao(candidatos_1)
 
     declaracao_2 <- importDecalaracao(arquivo_bens_2, ano_eleicao2)
     candidatos_2 <- importCandidatos(arquivo_candidatos_2, ano_eleicao2) 
     
+    ## Tratamento especial para o ano de 2014. Os dados do TSE estão inconsistentes para este ano.
+    if (ano_eleicao2 == 2014) {
+        candidatos_2 <- ajusta_situacao_2014(candidatos_2)
+    }
+    
     candidatos_2 <- determina_situacao(candidatos_2)
     
-    ## Caso especial para 2018, pois ainda não houve eleição. 
-    ## TODO: ATUALIZAR quando a eleição tiver sido apurada.
+    ## Caso especial para 2018, segundo turno ainda não realizado
+    ## TODO: ATUALIZAR quando o segundo turno for realizado
     if (ano_eleicao2 == 2018) {
         candidatos_2 <- candidatos_2 %>% 
-            mutate(codSituacaoEleito = 99)
+            mutate(codSituacaoEleito = ifelse(codSituacaoEleito == 6, 99, codSituacaoEleito))
     }
     
     atuais_eleitos <- candidatos_2 %>%
@@ -337,5 +347,20 @@ patrimonio_uf_para_uf <- function(uf, ano_eleicao1, ano_eleicao2) {
         return()
 }
 
+## Tratamento especial para o ano de 2014. Os dados do TSE estão inconsistentes para este ano.
+ajusta_situacao_2014 <- function(data) {
+    data <- data %>%
+        mutate(codSituacaoEleito = ifelse(siglaUF == "BR", 
+                                          ifelse(numTurno == 2, codSituacaoEleito, 
+                                                 ifelse(sequencialCandidato %in% c("280000000083", "280000000084", "280000000085", "280000000086"),
+                                                        -1, 4)),
+                                          codSituacaoEleito)) %>%
+        mutate(descSituacaoEleito = ifelse(siglaUF == "BR", 
+                                           ifelse(numTurno == 2, descSituacaoEleito, 
+                                                  ifelse(sequencialCandidato %in% c("280000000083", "280000000084", "280000000085", "280000000086"),
+                                                         "INDEFINIDO", "NÃO ELEITO")),
+                                           descSituacaoEleito))
+    return(data)
+}
 
 
