@@ -349,15 +349,17 @@ patrimonio_uf_para_uf <- function(uf, ano_eleicao1, ano_eleicao2) {
 
 ## Tratamento especial para o ano de 2014. Os dados do TSE estão inconsistentes para este ano.
 ajusta_situacao_2014 <- function(data) {
+    candidatos_segundo_turno <- c("280000000083", "280000000084", "280000000085", "280000000086")
+    
     data <- data %>%
         mutate(codSituacaoEleito = ifelse(siglaUF == "BR", 
                                           ifelse(numTurno == 2, codSituacaoEleito, 
-                                                 ifelse(sequencialCandidato %in% c("280000000083", "280000000084", "280000000085", "280000000086"),
+                                                 ifelse(sequencialCandidato %in% candidatos_segundo_turno,
                                                         -1, 4)),
                                           codSituacaoEleito)) %>%
         mutate(descSituacaoEleito = ifelse(siglaUF == "BR", 
                                            ifelse(numTurno == 2, descSituacaoEleito, 
-                                                  ifelse(sequencialCandidato %in% c("280000000083", "280000000084", "280000000085", "280000000086"),
+                                                  ifelse(sequencialCandidato %in% candidatos_segundo_turno,
                                                          "INDEFINIDO", "NÃO ELEITO")),
                                            descSituacaoEleito))
     return(data)
